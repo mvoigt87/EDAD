@@ -135,13 +135,17 @@ link.may[is.na(a_salida), ':='(a_salida=2017, m_salida=5)]  # impute censoring d
 ######################################
 
 # Entry age in 2008 (EDAD)
-# -----------------
+# ------------------------
 summary(link.may$EDAD)
 hist(link.may$EDAD, nclass = 42, main = "", xlab = "Age")  # age 65 years seem to be overrepresented (also more 66)
 # --- assumption: ??
 
 # creating an exit age variable based on a_salida (2007 as first year for data collection - 
 # some deaths are early in 2007 and lead to entry age = exit age problem)
+
+### ------------
+### AGE AT EXIT
+### ------------
 
 link.may <- link.may %>% 
   # first making the exit age smoother by adding the month and than substracting the first interview date (! find variable)
@@ -153,11 +157,14 @@ hist(link.may$age.ex) # looks ok!
 link.may %>% count(EDAD < age.ex)   
 
 
-# entry in disability (What does the 13 mean)
-# -------------------
+# entry in disability (What does the 13 mean?)
+# --------------------------------------------
 str(link.may$EdadInicioDisca13)
 link.may$EdadInicioDisca13 <- as.numeric(link.may$EdadInicioDisca13)
 summary(link.may$EdadInicioDisca13)
+
+link.may %>% count(EdadInicioDisca13>=65)
+
 
 # check the other ages - entry to dependency
 # ------------------------------------------
@@ -165,7 +172,7 @@ str(link.may$Edadinicio_cuidado)
 link.may$Edadinicio_cuidado <- as.numeric(link.may$Edadinicio_cuidado)
 summary(link.may$Edadinicio_cuidado)
 
-
+link.may %>% count(Edadinicio_cuidado>=65)
 
   # # possible end of disability
   # link.may$EdadFinDiscal13 <- as.numeric(link.may$EdadFinDiscal13)
@@ -285,7 +292,7 @@ KME.SEXO %>% ggplot() +
 # time variables for onset of disability and dependency
 #######################################################
 
-### A) the state model
+### A) the state graph
 
 states <- function(what, horizontal=T, ...){
   st.names <- c("Entry", "Recovery", "Disability", "Dependency", "Death")
