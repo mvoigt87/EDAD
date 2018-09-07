@@ -60,11 +60,13 @@ summary(EDAD.mayor$NumPersonas65)
 
 summary(EDAD.mayor$EDAD) # people 65 plus
 
+# There is information on 44 possible disabilities
+str(EDAD.mayor$EdadInicioDisca13)
 str(EDAD.mayor$EdadInicioDisca44)
-
+# And the year of onset of dependency
 str(EDAD.mayor$Edadinicio_cuidado)
 
-# see differences between different entry ages
+# see differences between different entry ages (disabilities 13-19-44)
 par(mfrow=c(1,3))
 hist(as.numeric(EDAD.mayor$EdadInicioDisca44))
 hist(as.numeric(EDAD.mayor$EdadInicioDisca19))
@@ -73,18 +75,25 @@ par(mfrow=c(1,1))
 
 # A few checks with variables - to get a feeling for the number of transitions
 EDAD.mayor <- data.table(EDAD.mayor)
-EDAD.mayor[, .N, .(!is.na(EdadInicioDisca13))]
+EDAD.mayor[, .N, .(!is.na(EdadInicioDisca44))]
 EDAD.mayor[, .N, .(!is.na(Edadinicio_cuidado))]
-EDAD.mayor[, .N, .(as.numeric(EdadInicioDisca13)<as.numeric(Edadinicio_cuidado))] # !
+EDAD.mayor[, .N, .(as.numeric(EdadInicioDisca44)<as.numeric(Edadinicio_cuidado))] # ! about 6000 cases we can work with
+
+# compare to last age
+summary(as.numeric(EDAD.mayor$EdadInicioDisca44))
+summary(as.numeric(EDAD.mayor$EdadUltimaDisca44)) # could be
+
 
     # Dependientes13, Dependientes13 Dependientes14 AsistenciaPersonal14
     # DemandaCuidados14 EdadInicioDisca44 EdadUltimaDisca44
 
-
-head(names(EDAD.mayor), 20)
+# select variables
+head(names(EDAD.mayor), 1000)
+tail(names(EDAD.mayor), 404)
+# change variable names for merge process
 names(EDAD.mayor)[6:10]<- c("nseccion", "dc", "viv", "hog", "nord")
 
-merge(EDAD.mayor[,c(1,4:12,17:23,29,885:898, 960:963, 1326:1329, 1371:1380),with=F],follow.up, by=c('nseccion','dc','viv','hog','nord'), all=T) -> link.may
+merge(EDAD.mayor[,c(1,4:12,17:29, 53:76, 89:92, 885:898, 960:963, 1321:1329, 1381:1404),with=F],follow.up, by=c('nseccion','dc','viv','hog','nord'), all=T) -> link.may
 class(link.may)
 link.may[,enlazado:=!is.na(estado)]
 link.may[,.N,.(enlazado,estado)]    # 6568 are not linked
@@ -159,11 +168,11 @@ link.may %>% count(EDAD < age.ex)
 
 # entry in disability (What does the 13 mean?)
 # --------------------------------------------
-str(link.may$EdadInicioDisca13)
-link.may$EdadInicioDisca13 <- as.numeric(link.may$EdadInicioDisca13)
-summary(link.may$EdadInicioDisca13)
+str(link.may$Edadinicio_disca44)
+link.may$Edadinicio_disca44 <- as.numeric(link.may$Edadinicio_disca44)
+summary(link.may$Edadinicio_disca44)
 
-link.may %>% count(EdadInicioDisca13>=65)
+link.may %>% count(Edadinicio_disca44>=65)
 
 
 # check the other ages - entry to dependency
@@ -183,151 +192,3 @@ link.may %>% count(Edadinicio_cuidado>=65)
 # --------------------------------------------
 
 # rm(ed.hog, ed.hog2, EDAD.mayor, follow.up)
-
-
-# --------------------------------------------
-# 3. Few discriptive plots on different states
-# --------------------------------------------
-# --------------------------------------------
-
-
-# Age distribution (disability)
-###############################
-
-# Exit age
-# ---------
-with(link.may, tapply(age.ex, list(event,LIMIT), mean)) # Just means but still the No cases are puzzeling
-
-    # Sí, gravemente limitado Sí, limitado pero no gravemente       No       NC
-    # 0                83.80638                        84.09716 82.52330 87.09333
-    # 1                85.88888                        85.75008 83.75016 85.46238
-# get rid of the "NC" cases for now
-
-link.may <- link.may %>% filter(LIMIT!="NC")
-
-# check distribution
-hist(link.may$age.ex, nclass = 50, main = "", xlab = "Age")
-
-# event-age distribution
-link.may %>% mutate(event = as.factor(event)) %>% 
-  ggplot(aes(x=age.ex, fill=event)) +
-  geom_histogram(bins = 44) +
-  scale_x_continuous(name = "Age") +
-  scale_fill_discrete(name = "") +
-  theme_bw()    
-  # looks believable - everybody before age 75 exits because of an event
-
-
-# Survival 
-##########
-#     To account for left truncation, a cox ph approximation is used to estimate the KME
-
-
-
-# KME by disability
-#%%%%%%%%%%%%%%%%%%#
-
-mfit.1a <- survfit(coxph(Surv(time=EDAD,
-                              time2=age.ex,
-                              event=event)~1, data=subset(link.may,LIMIT=="Sí, gravemente limitado")), 
-                      data=subset(link.may,LIMIT=="Sí, gravemente limitado"),type="kaplan-meier")
-
-mfit.1b <- survfit(coxph(Surv(time = EDAD,
-                             time2 = age.ex,
-                             event = event) ~ 1, data=subset(link.may,LIMIT=="Sí, limitado pero no gravemente")), 
-                        data=subset(link.may,LIMIT=="Sí, limitado pero no gravemente"),type="kaplan-meier")
-
-mfit.1c <- survfit(coxph(Surv(time = EDAD,
-                             time2 = age.ex,
-                             event = event) ~ 1, data=subset(link.may,LIMIT=="No")), 
-                          data=subset(link.may,LIMIT=="No"),type="kaplan-meier")
-
-KM.LIM.a <- tidy(mfit.1a) %>% select(estimate, time) %>% mutate(Limit = "Severely limited")
-KM.LIM.b <- tidy(mfit.1b) %>% select(estimate, time) %>% mutate(Limit = "Mildly limited")
-KM.LIM.c <- tidy(mfit.1c) %>% select(estimate, time) %>% mutate(Limit = "No limitation")
-
-KM.LIM <- union(KM.LIM.a, KM.LIM.b) %>% union(KM.LIM.c)
-
-KM.LIM %>% dplyr::filter(time > 65) %>% 
-  ggplot() +
-  geom_step(mapping=aes(x=time, y=estimate, color=Limit)) +
-  scale_y_continuous(name = "Survival Probability")                  +
-  scale_x_continuous(name = "Age") +
-  scale_colour_manual(values = c("orange", "darkgrey", "red"), name="")     +
-  theme_bw()
-
-# Believable and expected (will need to find a way to enter the month information)
-
-rm(KM.LIM.a, KM.LIM.b, KM.LIM.c)
-
-# sex differences
-#%%%%%%%%%%%%%%%%%#
-
-mfit.2a <- survfit(coxph(Surv(time=EDAD,
-                       time2 = age.ex,
-                       event = event) ~ 1, data = subset(link.may, SEXO=="Varón")), data = subset(link.may, SEXO=="Varón"),
-                        type = "kaplan-meier")
-
-
-mfit.2b <- survfit(coxph(Surv(time=EDAD,
-                             time2 = age.ex,
-                             event = event) ~ 1, data = subset(link.may, SEXO=="Mujer")), data = subset(link.may, SEXO=="Mujer"),
-                   type = "kaplan-meier")
-
-
-KME.SEXOa <- tidy(mfit.2a) %>% select(estimate, time) %>% mutate(sex = "male")
-KME.SEXOb <- tidy(mfit.2b) %>% select(estimate, time) %>% mutate(sex = "female")
-
-KME.SEXO <- union(KME.SEXOa, KME.SEXOb)
-KME.SEXO %>% ggplot() +
-             geom_step(aes(x=time, y=estimate, color=sex)) +
-  scale_y_continuous(name = "Survival Probability")                  +
-  scale_x_continuous(name = "Age") +
-  scale_colour_manual(values = c("orange", "darkgrey"), name="")     +
-  theme_bw()
-
-  # Very similar to former sex comparisons with Spanish contemporary data
-
-
-# time variables for onset of disability and dependency
-#######################################################
-
-### A) the state graph
-
-states <- function(what, horizontal=T, ...){
-  st.names <- c("Entry", "Recovery", "Disability", "Dependency", "Death")
-  connect <- matrix(0,5,5, dimnames = list(st.names, st.names))
-  connect[1,-1] <- c(0,1,1, 1.4)
-  connect[2,3:5] <- c(1, 1.4, 1)
-  connect[3, c(2,4,5)] <- 1
-  connect[4, c(3,5)] <- 1
-  statefig(matrix(c(1,3,1)), connect, cex = .8, ...)
-}
-
-states()
-
-
-
-
-
-data1 <- myeloid
- data1$crstat <- factor(with(data1, ifelse(is.na(crtime), death, 2)),
-                         labels=c("censor", "death", "CR"))
- data1$crtime <- with(data1, ifelse(crstat=="CR", crtime, futime))
- data1$txstat <- factor(with(data1, ifelse(is.na(txtime), death, 2)),
-                         labels=c("censor", "death", "transplant"))
- data1$txtime <- with(data1, ifelse(txstat=="transplant", txtime, futime))
- for (i in c("futime", "crtime", "txtime", "rltime"))
-  data1[[i]] <- data1[[i]] * 12/365.25 #rescale to months
-
-# Define different states
-temp <- link.may
-class(temp)
-paa2 <- tmerge(link.may[, c('Id')], temp,
-                id=Id, death=event(age.d, event),
-                disability = event(EdadInicioDisca13),
-                dependency = event(Edadinicio_cuidado),
-                recover = event(EdadFinDiscal13),
-                priordis = tdc(EdadInicioDisca13),
-                priordep = tdc(Edadinicio_cuidado))
-
