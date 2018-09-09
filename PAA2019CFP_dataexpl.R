@@ -130,15 +130,26 @@ mfit.1c <- survfit(coxph(Surv(time = EDAD,
                    data=subset(link.may,group.d.d =="acute"),type="kaplan-meier")
 
 KM.LIM.a <- tidy(mfit.1a) %>% select(estimate, time) %>% mutate(Limit = "Gradual")
+help.KM1 <- data.frame(0.99,65,"Gradual")
+names(help.KM1) <- c("estimate", "time", "Limit")
+KM.LIM.a <- rbind(KM.LIM.a, help.KM1)
+
 KM.LIM.b <- tidy(mfit.1b) %>% select(estimate, time) %>% mutate(Limit = "Moderate")
+help.KM2 <- data.frame(0.99,65,"Moderate")
+names(help.KM2) <- c("estimate", "time", "Limit")
+KM.LIM.a <- rbind(KM.LIM.b, help.KM2)
+
 KM.LIM.c <- tidy(mfit.1c) %>% select(estimate, time) %>% mutate(Limit = "Acute")
+help.KM3 <- data.frame(0.99,65,"Acute")
+names(help.KM3) <- c("estimate", "time", "Limit")
+KM.LIM.a <- rbind(KM.LIM.c, help.KM3)
 
 ### ADD a starting value!!!
 
 KM.LIM <- union(KM.LIM.a, KM.LIM.b) %>% union(KM.LIM.c)
 
 
-KM.LIM %>% dplyr::filter(time > 65) %>% 
+KM.LIM %>% dplyr::filter(time >= 65) %>% 
   ggplot() +
   geom_step(mapping=aes(x=time, y=estimate, color=Limit)) +
   scale_y_continuous(name = "Survival Probability")                  +
