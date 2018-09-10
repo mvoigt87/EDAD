@@ -1,5 +1,12 @@
 # Follows file PAA2019CFR.R
 
+library(tidyverse)
+library(data.table)
+library(foreign)
+library(survival)
+library(broom)
+library(stargazer)
+
 # --------------------------------------------
 load(file='010_mayor.link.RData')
 # --------------------------------------------
@@ -116,7 +123,7 @@ table(link.may$group.d.d)
 
 mfit.1a <- survfit(coxph(Surv(time=EDAD,
                               time2=age.ex,
-                              event=event)~1, data=subset(link.may,group.d.d =="gradual")), 
+                              event=event) ~ 1, data=subset(link.may,group.d.d =="gradual")), 
                    data=subset(link.may,group.d.d =="gradual"),type="kaplan-meier")
 
 mfit.1b <- survfit(coxph(Surv(time = EDAD,
@@ -130,55 +137,85 @@ mfit.1c <- survfit(coxph(Surv(time = EDAD,
                    data=subset(link.may,group.d.d =="acute"),type="kaplan-meier")
 
 KM.LIM.a <- tidy(mfit.1a) %>% select(estimate, time) %>% mutate(Limit = "Gradual")
-help.KM1 <- data.frame(0.99,65,"Gradual")
+help.KM1 <- data.frame(1,65,"Gradual")
 names(help.KM1) <- c("estimate", "time", "Limit")
-KM.LIM.a <- rbind(KM.LIM.a, help.KM1)
+KM.LIM.a <- union(KM.LIM.a, help.KM1)
 
 KM.LIM.b <- tidy(mfit.1b) %>% select(estimate, time) %>% mutate(Limit = "Moderate")
-help.KM2 <- data.frame(0.99,65,"Moderate")
+help.KM2 <- data.frame(1,65,"Moderate")
 names(help.KM2) <- c("estimate", "time", "Limit")
-KM.LIM.a <- rbind(KM.LIM.b, help.KM2)
+KM.LIM.b <- union(KM.LIM.b, help.KM2)
 
 KM.LIM.c <- tidy(mfit.1c) %>% select(estimate, time) %>% mutate(Limit = "Acute")
-help.KM3 <- data.frame(0.99,65,"Acute")
+help.KM3 <- data.frame(1,65,"Acute")
 names(help.KM3) <- c("estimate", "time", "Limit")
-KM.LIM.a <- rbind(KM.LIM.c, help.KM3)
+KM.LIM.c <- union(KM.LIM.c, help.KM3)
 
 ### ADD a starting value!!!
 
 KM.LIM <- union(KM.LIM.a, KM.LIM.b) %>% union(KM.LIM.c)
 
 
-KM.LIM %>% dplyr::filter(time >= 65) %>% 
+km.1 <- KM.LIM %>% dplyr::filter(time >= 65) %>% 
   ggplot() +
   geom_step(mapping=aes(x=time, y=estimate, color=Limit)) +
   scale_y_continuous(name = "Survival Probability")                  +
   scale_x_continuous(name = "Age") +
   scale_colour_manual(values = c("orange", "darkgrey", "red"), name="")     +
   theme_bw()
-
-  # 
+  # change the legend postion
+  km.1 <- km.1 + theme(legend.position = c(0.85, 0.85)) + 
+  scale_shape_discrete(guide=FALSE)
 
 # Believable and expected survival probabilities - gradient from gradual to acute
 # Just need the get the noise in the beginning under control
 
-rm(KM.LIM.a, KM.LIM.b, KM.LIM.c)
+rm(KM.LIM.a, KM.LIM.b, KM.LIM.c, help.KM1, help.KM2, help.KM3)
 
 
 
+###############################
 ### Exploratory Cox Regression
+###############################
 
 # Preliminary step: Change Reference Category and Category names
+link.may$group.d.d <- as.factor(link.may$group.d.d)
+link.may <- within(link.may, group.d.d <- relevel(group.d.d, ref = "gradual"))  
+link.may$Sex <- as.factor(link.may$Sex)
+link.may <- within(link.may, Sex <- relevel(Sex, ref = "Female"))  
+link.may <- within(link.may, Education <- relevel(Education, ref = "High"))  
+link.may <- within(link.may, Income <- relevel(Income, ref = "625+ eur"))  
 
-Cox.1 <- coxph(Surv(time=EDAD,
-                   time2=age.ex,
-                    event=event)~ group.d.d + Sex + Education + Income + AIREAC, data=subset(link.may))
+# Just the transitions
+Cox.CFP.a <- coxph(Surv(time=EDAD,
+                        time2=age.ex,
+                        event=event) ~ group.d.d, 
+                   data=subset(link.may))
 
-summary(Cox.1)
+summary(Cox.CFP.a)
+
+# Plus a few ses variables
+Cox.CFP.b <- coxph(Surv(time=EDAD,
+                    time2=age.ex,
+                    event=event) ~ group.d.d + Sex + Education + Income, 
+                 data=subset(link.may))
+
+summary(Cox.CFP.b)
+
+# table for CFP
+# -------------
+
+stargazer(Cox.CFP.a, Cox.CFP.b, title ="Cox PH Model",no.space=F, 
+          ci=T, ci.level=0.95, omit.stat=c("max.rsq"),dep.var.labels=c("Hazard Ratios"),
+          covariate.labels=c("Acute Transition", "Moderate Transition", "Male", "Low Education",
+                             "Low Income (<625 Eur)"),
+          single.row=T, apply.coef = exp)
 
 
-# time variables for onset of disability and dependency
-#######################################################
+
+#########################################################
+# time variables for onset of disability and dependency #
+#########################################################
 
 ### A) the state graph
 
