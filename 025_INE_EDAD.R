@@ -21,36 +21,40 @@ link %>% ggplot(aes(x=edad,fill=estado)) + geom_histogram() + theme_bw()  # inte
 # leaving
 link %>% ggplot(aes(x=a_salida)) + geom_histogram() + theme_bw()
 
-# death
+# death/bajas
 link %>% ggplot(aes(x=anodef)) + geom_histogram() + theme_bw()
 
-link[estado=='B',.N ,keyby=.(Con.ANODEF=(!is.na(anodef)),  con.CAUSA = (!is.na(causa)))] ## 6963 (41%) def sin causa y fecha
+link[estado=='B',.N ,keyby=.(Con.ANODEF=(!is.na(anodef)),  con.CAUSA = (!is.na(causa)))] 
+## 6963 (41%) bajas sin causa y fecha # deaths in 2017
 
 # Impute a death date for the ones without assigned date but defuncion
 summary(link$a_salida)
 
+link %>% count(estado=='B' & !is.na(anodef))  # 16738 bajas with confirmed death dates (1 more than in the other count)
+link %>% count(estado=='B' & !is.na(a_salida)) # 3070 bajas with exit age = emigration?
 link %>% count(estado=='B' & is.na(anodef) & is.na(a_salida)) # 3893 bajas don´t have a year of death or end of the survey
-link %>% count(estado=='B' & !is.na(a_salida) & is.na(causa))
+
+# link %>% count(estado=='B' & !is.na(a_salida) & is.na(causa))
 
 ### all possible ways I can think of over the top the head to impute the date from one of the two situations
 
 # impute middle of the observation period
-link[estado=='B' & is.na(anodef) & is.na(a_salida), ':='(anodef=2013, mesdef=1, a_salida=2013, m_salida=1)]
+link[estado=='B' & is.na(anodef) & is.na(a_salida), ':='(anodef=2012, mesdef=6, a_salida=2012, m_salida=6)]
 
 link[estado=='B' & !is.na(anodef) & !is.na(causa), ':='(a_salida=anodef, m_salida=mesdef)]
 
-link[estado=='B' & !is.na(a_salida), ':='(anodef=a_salida, mesdef=m_salida)] #  ??? - !is.na(causa)
+# link[estado=='B' & !is.na(a_salida), ':='(anodef=a_salida, mesdef=m_salida)] #  ??? - !is.na(causa)
 
 # Assign a censoring date for the ones who were censored
   # for now: end of 2017
-link %>% count(estado=='B')
+link %>% count(estado=='B')                    # 23700
 link %>% count(estado=='B' & !is.na(a_salida)) # ok!
 
 # Get rid of the one without follow up (about 50.000 cases)
-#link[estado!='N'] -> link
+# link[estado!='N'] -> link
 
 ## censored individuals
-link[estado=='A', ':='(a_salida=2017, m_salida=1)]
+link[estado=='A', ':='(a_salida=2016, m_salida=12)]
 
 
 summary(link$a_salida)
@@ -75,14 +79,14 @@ link.fw[,dob:=as.IDate(paste0(2008-edad-1,'-',sample(1:12,n11,replace = T),'-15'
 # ---------
 link.fw[,dout:= as.IDate(ifelse(estado=='B',ifelse(!is.na(anodef),
                                                   paste0(anodef,'-',mesdef,'-15'),
-                                                  paste0(a_salida,'-',m_salida,'-','-15')),'2017-01-01'))]
+                                                  paste0(a_salida,'-',m_salida,'-','-15')),'2016-12-31'))]
 
-# cause
+# cause count
 link.fw %>% count(causa)
 
 ### Lexis package - create data with and without
 
-Lcoh.sin.B <- Lexis( entry = list( per=rep(2007,n11), age= 2007-cal.yr(dob)),
+Lcoh.sin.B <- Lexis( entry = list( per=rep(2008,n11), age= 2008-cal.yr(dob)),
                exit = list(per=cal.yr(dout)),
                entry.status = rep(0,n11),
                exit.status = ifelse(!is.na(causa),1,0),
@@ -90,7 +94,7 @@ Lcoh.sin.B <- Lexis( entry = list( per=rep(2007,n11), age= 2007-cal.yr(dob)),
 
 
 
-Lcoh.con.B <- Lexis( entry = list( per=rep(2007,n11), age= 2007-cal.yr(dob)),
+Lcoh.con.B <- Lexis( entry = list( per=rep(2008,n11), age= 2008-cal.yr(dob)),
                      exit = list(per=cal.yr(dout)),
                      entry.status = rep(0,n11),
                      exit.status = ifelse(estado=="B",1,0),

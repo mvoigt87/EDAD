@@ -25,10 +25,6 @@ load(file='010_mayor.link.RData')
 # ---------
 with(link.may, tapply(age.ex, list(event,LIMIT), mean)) # Just means but still the No cases are puzzeling
 
-# Sí, gravemente limitado Sí, limitado pero no gravemente       No       NC
-# 0                83.80638                        84.09716 82.52330 87.09333
-# 1                85.88888                        85.75008 83.75016 85.46238
-
 
 # Drop the "NC" cases for now and only extract the dependent ones
 # ----------------------------------------------------------------
@@ -161,7 +157,7 @@ km.1 <- KM.LIM %>% dplyr::filter(time >= 65) %>%
   geom_step(mapping=aes(x=time, y=estimate, color=Limit)) +
   scale_y_continuous(name = "Survival Probability")                  +
   scale_x_continuous(name = "Age") +
-  scale_colour_manual(values = c("orange", "darkgrey", "red"), name="")     +
+  scale_colour_manual(values = c("#000000", "#E69F00", "#56B4E9"), name="")     +
   theme_bw()
   # change the legend postion
   km.1 <- km.1 + theme(legend.position = c(0.85, 0.85)) + 
