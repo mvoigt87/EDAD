@@ -1,5 +1,3 @@
-# Follows file PAA2019CFR.R
-
 library(tidyverse)
 library(data.table)
 library(foreign)
@@ -10,8 +8,6 @@ library(stargazer)
 # --------------------------------------------
 load(file='010_mayor.link.RData')
 # --------------------------------------------
-
-
 # Select Population - Drop the "NC" cases for now and only extract the dependent ones
 # ------------------------------------------------------------------------------------
 
@@ -23,48 +19,7 @@ link.may <- link.may %>% filter(LIMIT!="NC") %>%
   filter(!is.na(Edadinicio_cuidado))   
 
 link.may <- data.table(link.may)
-  # 4761 cases - working material
-
-# --------------------------------------------
-# 1. Few discriptive plots on different states
-# --------------------------------------------
-# --------------------------------------------
-
-
-# Age distribution (disability)
-###############################
-
-# Exit age
-# ---------
-with(link.may, tapply(age.ex, list(event,LIMIT), mean)) # Just means but still the No cases are puzzeling
-
-table(link.may$estado)
-
-link.may[,.N,.(enlazado,estado)] 
-
-# By disability status
-# --------------------
-round(prop.table(table(link.may$event, link.may$Gravity),2),3)
-
-with(link.may, tapply(age.ex, list(event,Gravity), mean))
-
-
-
-
-# check distribution
-hist(link.may$age.ex, nclass = 50, main = "", xlab = "Age")
-
-# event-age distribution
-link.may %>% mutate(event = as.factor(event)) %>% 
-  ggplot(aes(x=age.ex, fill=event)) +
-  geom_histogram(bins = 44) +
-  scale_x_continuous(name = "Age") +
-  scale_fill_discrete(name = "") +
-  theme_bw()    
-# looks believable - most of the members of this very frail group die during the observation period
-
-
-
+# 4761 cases - working material
 
 
 ################
@@ -108,15 +63,15 @@ KME.SEXO %>% ggplot() +
 
 
 ## Therefore: Creating a for now arbitrary variable to group different transitions by time
-  # acute: less than 1 years between onset of disability and onset of dependency
-  # moderate: between 1 and 10 years (mean)
-  # gradual : more than 10 years
+# acute: less than 1 years between onset of disability and onset of dependency
+# moderate: between 1 and 10 years (mean)
+# gradual : more than 10 years
 
 link.may <- link.may %>% mutate(diff.d.d= Edadinicio_cuidado - Edadinicio_disca44) %>%
   # clean up
   mutate(diff.d.d=ifelse(Edadinicio_cuidado - Edadinicio_disca44<0,diff.d.d+0.5,diff.d.d)) %>% 
   mutate(group.d.d = ifelse(Edadinicio_cuidado - Edadinicio_disca44>10,"gradual",
-                                                  ifelse(Edadinicio_cuidado - Edadinicio_disca44<=1,"acute", "moderate")))
+                            ifelse(Edadinicio_cuidado - Edadinicio_disca44<=1,"acute", "moderate")))
 
 summary(link.may$diff.d.d)
 link.may %>% mutate(event = as.factor(event)) %>% 
@@ -175,8 +130,8 @@ km.1 <- KM.LIM %>% dplyr::filter(time >= 65) %>%
   scale_x_continuous(name = "Age") +
   scale_colour_manual(values = c("#000000", "#E69F00", "#56B4E9"), name="")     +
   theme_bw()
-  # change the legend postion
-  km.1 <- km.1 + theme(legend.position = c(0.85, 0.85)) + 
+# change the legend postion
+km.1 <- km.1 + theme(legend.position = c(0.85, 0.85)) + 
   scale_shape_discrete(guide=FALSE)
 
 # Believable and expected survival probabilities - gradient from gradual to acute
@@ -208,9 +163,9 @@ summary(Cox.CFP.a)
 
 # Plus a few ses variables
 Cox.CFP.b <- coxph(Surv(time=EDAD,
-                    time2=age.ex,
-                    event=event) ~ group.d.d + Sex + Education + Income, 
-                 data=subset(link.may))
+                        time2=age.ex,
+                        event=event) ~ group.d.d + Sex + Education + Income, 
+                   data=subset(link.may))
 
 summary(Cox.CFP.b)
 
@@ -222,49 +177,4 @@ stargazer(Cox.CFP.a, Cox.CFP.b, title ="Cox PH Model",no.space=F,
           covariate.labels=c("Acute Transition", "Moderate Transition", "Male", "Low Education",
                              "Low Income (<625 Eur)"),
           single.row=T, apply.coef = exp)
-
-
-
-#########################################################
-# time variables for onset of disability and dependency #
-#########################################################
-
-### A) the state graph
-
-states <- function(what, horizontal=T, ...){
-  st.names <- c("Entry", "Recovery", "Disability", "Dependency", "Death")
-  connect <- matrix(0,5,5, dimnames = list(st.names, st.names))
-  connect[1,-1] <- c(0,1,1, 1.4)
-  connect[2,3:5] <- c(1, 1.4, 1)
-  connect[3, c(2,4,5)] <- 1
-  connect[4, c(3,5)] <- 1
-  statefig(matrix(c(1,3,1)), connect, cex = .8, ...)
-}
-
-states()
-
-
-
-
-
-data1 <- myeloid
-data1$crstat <- factor(with(data1, ifelse(is.na(crtime), death, 2)),
-                       labels=c("censor", "death", "CR"))
-data1$crtime <- with(data1, ifelse(crstat=="CR", crtime, futime))
-data1$txstat <- factor(with(data1, ifelse(is.na(txtime), death, 2)),
-                       labels=c("censor", "death", "transplant"))
-data1$txtime <- with(data1, ifelse(txstat=="transplant", txtime, futime))
-for (i in c("futime", "crtime", "txtime", "rltime"))
-  data1[[i]] <- data1[[i]] * 12/365.25 #rescale to months
-
-# Define different states
-temp <- link.may
-class(temp)
-paa2 <- tmerge(link.may[, c('Id')], temp,
-               id=Id, death=event(age.d, event),
-               disability = event(EdadInicioDisca13),
-               dependency = event(Edadinicio_cuidado),
-               recover = event(EdadFinDiscal13),
-               priordis = tdc(EdadInicioDisca13),
-               priordep = tdc(Edadinicio_cuidado))
 
