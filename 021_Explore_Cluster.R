@@ -37,10 +37,12 @@ link.may <- data.table(link.may)
 
 # Exit age
 # ---------
-with(link.may, tapply(age.ex, list(event,LIMIT), mean)) # Just means but still the No cases are puzzeling
+with(link.may, tapply(age.ex, list(event,LIMIT), mean)) # Just mean ages but still the No cases are puzzeling 
+# (What's NC?)
 
-table(link.may$estado)
+table(link.may$estado) # there is one N case
 
+link.may <- data.table(link.may)
 link.may[,.N,.(enlazado,estado)] 
 
 # By disability status
