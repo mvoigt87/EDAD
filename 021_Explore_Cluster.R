@@ -674,9 +674,12 @@ dismat[1:10,1:10]
 dismat[4,5]
 
 
-# males
+# males (OM)
 dismat_M <- seqdist(DisSeq_M, method = "OM", sm = submat_M)
 dismat_M[1:10,1:10]
+# males (OMslen - spell-length sensitive)
+dismat_M2 <- seqdist(DisSeq_M, method = "OMslen", sm = submat_M)
+dismat_M2[1:10,1:10]
 
 # females
 dismat_F <- seqdist(DisSeq_F, method = "OM", sm = submat_F)
@@ -710,14 +713,28 @@ table(cluster3)
 ## ---------------------------------------------------------- ##
 ## for males only
 clusterw_M <- agnes(dismat_M, diss = TRUE, method = "ward")
+clusterw_M2 <- agnes(dismat_M2, diss = TRUE, method = "ward")
+
 cluster3_M <- cutree(clusterw_M, k = 3)
+cluster3_M2 <- cutree(clusterw_M2, k = 3)
+
 cluster4_M <- cutree(clusterw_M, k = 4)
+cluster4_M2 <- cutree(clusterw_M2, k = 4)
+cluster5_M2 <- cutree(clusterw_M2, k = 5)
+
 
 cluster3_M <- factor(cluster3_M, labels = c("Type 1", "Type 2", "Type 3"))
+cluster3_M2 <- factor(cluster3_M2, labels = c("Type 1", "Type 2", "Type 3"))
 table(cluster3_M)
 
 cluster4_M <- factor(cluster4_M, labels = c("Type 1", "Type 2", "Type 3", "Type 4"))
+cluster4_M2 <- factor(cluster4_M2, labels = c("Type 1", "Type 2", "Type 3", "Type 4"))
+cluster5_M2 <- factor(cluster5_M2, labels = c("Type 1", "Type 2", "Type 3", "Type 4","Type 5"))
+
 table(cluster4_M)
+table(cluster4_M2)
+table(cluster5_M2)
+
 ## ---------------------------------------------------------- ##
 ## for females only
 clusterw_F <- agnes(dismat_F, diss = TRUE, method = "ward")
@@ -728,8 +745,8 @@ cluster3_F <- factor(cluster3_F, labels = c("Type 1", "Type 2", "Type 3"))
 table(cluster3_F)
 
 # 5 groups seems to be the ideal cluster
-cluster4_F <- factor(cluster4_F, labels = c("Type 1", "Type 2", "Type 3", "Type 4","Type 5"))
-table(cluster4_F)
+cluster5_F <- factor(cluster4_F, labels = c("Type 1", "Type 2", "Type 3", "Type 4","Type 5"))
+table(cluster5_F)
 
 ## ---------------------------------------------------------- ##
 # Now plotting for visual examination
@@ -738,9 +755,12 @@ seqfplot(DisSeq, group = cluster3, pbarw = T)
 
 # males 3 cats
 seqfplot(DisSeq_M, group = cluster3_M, pbarw = T)
+seqfplot(DisSeq_M, group = cluster3_M2, pbarw = T)
 
-# males 4 cats
+# males 4/5 cats
 seqfplot(DisSeq_M, group = cluster4_M, pbarw = T)
+seqfplot(DisSeq_M, group = cluster4_M2, pbarw = T)
+seqfplot(DisSeq_M, group = cluster5_M2, pbarw = T)
 
 # females 3 cats
 seqfplot(DisSeq_F, group = cluster3_F, pbarw = T)
