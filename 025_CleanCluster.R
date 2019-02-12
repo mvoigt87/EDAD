@@ -25,6 +25,7 @@ library(TraMineR)
 library(reshape)
 library("RColorBrewer")
 library(cluster)
+library(WeightedCluster)
 
 ### load data
 
@@ -150,7 +151,9 @@ dismat_F2[1:10,1:10]
 # ---------------------------------------------------------------
 
 # command provides computes a agglomorative hieracrchical clustering
-# option "ward" refers to the Ward´s method! - Other option "weigthed" which uses weighted averages
+#
+# Option "ward" refers to the Ward´s method! = Minimizes the residual variance (weighted)
+# Other option "weigthed" which uses weighted averages
 
 clusterw_M <- agnes(dismat_M, diss = TRUE, method = "ward")
 clusterw_M2 <- agnes(dismat_M2, diss = TRUE, method = "ward")
@@ -167,15 +170,34 @@ plot(clusterw_M2, which.plots = 2) # 2 or 4
 plot(clusterw_F, which.plots = 2)  # 3 or 6
 plot(clusterw_F2, which.plots = 2) # 3 or 5
 
-# 2.4.3 Group sizes
+# 2.4.3 Assessing optimal number of clusters by Hierarchical Clustering (see Studer 2013)
+
+# summary command gives values for various statistical tests (apparently preferable = ASW) - needs to be doublechecked
+
+data.clust_M <- wcKMedRange(dismat_M, kvals=2:20)
+summary(data.clust_M)
+plot(data.clust_M)
+
+data.clust_M2 <- wcKMedRange(dismat_M2, kvals=2:20)
+summary(data.clust_M2, max.rank = 2)
+
+data.clust_F <- wcKMedRange(dismat_F, kvals=2:20)
+summary(data.clust_F)
+plot(data.clust_F)
+
+data.clust_F2 <- wcKMedRange(dismat_F2, kvals=2:20)
+summary(data.clust_F2, max.rank = 2)
+
+# 2.4.4 Group sizes
 
 # cutree command (2/3 groups)
 
 cluster2M <- cutree(clusterw_M, k = 2)
 cluster2M2 <- cutree(clusterw_M2, k = 2)
-cluster3M2 <- cutree(clusterw_M2, k = 3)
+cluster4M2 <- cutree(clusterw_M2, k = 4)
 
 cluster3F <- cutree(clusterw_F, k = 3)
+cluster2F2 <- cutree(clusterw_F2, k = 2)
 cluster3F2 <- cutree(clusterw_F2, k = 3)
 
 # Create three factors for grouping (for now without descriptive name)
@@ -183,11 +205,13 @@ cluster2M <- factor(cluster2M, labels = c("Type 1", "Type 2"))
 table(cluster2M)
 cluster2M2 <- factor(cluster2M2, labels = c("Type 1", "Type 2"))
 table(cluster2M2)
-cluster3M2 <- factor(cluster3M2, labels = c("Type 1", "Type 2", "Type 3"))
-table(cluster3M2)
+cluster4M2 <- factor(cluster4M2, labels = c("Type 1", "Type 2", "Type 3", "Type 4"))
+table(cluster4M2)
 
 cluster3F <- factor(cluster3F, labels = c("Type 1", "Type 2", "Type 3"))
 table(cluster3F)
+cluster2F2 <- factor(cluster2F2, labels = c("Type 1", "Type 2"))
+table(cluster2F2)
 cluster3F2 <- factor(cluster3F2, labels = c("Type 1", "Type 2", "Type 3"))
 table(cluster3F2)
 
@@ -201,16 +225,74 @@ table(cluster3F2)
 # males 
 seqfplot(DisSeq_M, group = cluster2M, pbarw = F)
 seqfplot(DisSeq_M, group = cluster2M2, pbarw = F)
-seqfplot(DisSeq_M, group = cluster3M2, pbarw = F)
+seqfplot(DisSeq_M, group = cluster4M2, pbarw = F)
 
 # females
 seqfplot(DisSeq_F, group = cluster3F, pbarw = F)
+seqfplot(DisSeq_F, group = cluster2F2, pbarw = F)
 seqfplot(DisSeq_F, group = cluster3F2, pbarw = F)
 
 # 2.5.2 - mean time spent in each state by cluster
 
 seqmtplot(DisSeq_M, group = cluster2M)
-seqmtplot(DisSeq_M, group = cluster3M2)
+seqmtplot(DisSeq_M, group = cluster2M2)
+seqmtplot(DisSeq_M, group = cluster4M2)
 
 seqmtplot(DisSeq_F, group = cluster3F)
+seqmtplot(DisSeq_F, group = cluster2F2)
 seqmtplot(DisSeq_F, group = cluster3F2)
+
+# 2.6 Put the pieces together - matching the cluster 
+# --------------------------------------------------
+
+# Values are hard to interpret = actually they the „medoids“, the representative sequences for each of these groups
+
+# males 
+# -----
+
+# 2 groups (OMslen object)
+tra_may_M$clusters2 <- data.clust_M2$clustering$cluster2
+
+# 4 groups (OMslen object)
+tra_may_M$clusters4 <- data.clust_M2$clustering$cluster4
+
+# females 
+# -------
+
+# 2 groups (OMslen object)
+tra_may_F$clusters2 <- data.clust_F2$clustering$cluster2
+
+# 4 groups (OMslen object)
+tra_may_F$clusters3 <- data.clust_F2$clustering$cluster3
+
+
+# 2.7 Graphical check for the cluster
+# -----------------------------------
+
+# males 2 and 4 groups
+seqdplot(DisSeq_M, group=tra_may_M$clusters2)
+seqdplot(DisSeq_M, group=tra_may_M$clusters4)
+
+# females 2 and 3 groups
+seqdplot(DisSeq_F, group=tra_may_F$clusters2)
+seqdplot(DisSeq_F, group=tra_may_F$clusters3)
+
+
+# 3. Calculate medium age at death per cluster
+##############################################
+
+## 3.1. link the cluster information back to the original dataset (and find meaningful descriptions)
+
+# males
+tra_may_M <- tra_may_M %>% select(Id, clusters2, clusters4) %>% 
+              mutate(cluster2 = ifelse(clusters2==177, "late onset", "early onset")) %>% 
+              mutate(cluster4 = ifelse(clusters4==143, "late gradual", ifelse(clusters4==1472, "early gradual",
+                                 ifelse(clusters4==256, "late healthy", "late abrupt")))) %>% 
+              select(-clusters4, - clusters2)
+
+# females
+tra_may_F <- tra_may_F %>% select(Id, clusters2, clusters3) %>%
+             mutate(cluster2 = ifelse(clusters2==177, "late onset short", "early onset long")) %>%
+             mutate(cluster3 = ifelse(clusters3==1215, "early abrupt", 
+                    ifelse(clusters3==1427,"late abrupt", "early gradual"))) %>% 
+             select(-clusters2, -clusters3)
