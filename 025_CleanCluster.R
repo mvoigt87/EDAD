@@ -30,18 +30,36 @@ library(WeightedCluster)
 ### load data
 
 load("020_traMay.RData")
+# censored data
 load("020_traMay_C.RData")
-
+# censored data with age of onset of a 12 A (ADL group A) disability as transition point from disability free to idependent dis
+load("020_traMay_12A.RData")
 
 
 
 ### 1.1 - Create separate datasets for men and women (literature: different timings and disability occurrences)
-###
 
-tra_may_M <- tra_may_C %>% filter(SEXO=="Varón") %>% mutate(SEXO="Male")
 
-tra_may_F <- tra_may_C %>% filter(SEXO=="Mujer") %>% mutate(SEXO="Female")
+###########################################################
+### A) CHANGE DATA SET DEPENDING ON NEEDS !!!!!!!!!!!!!!!!!
+###########################################################
 
+
+tra_may_M <- tra_may_12A %>% filter(SEXO=="Varón") %>% mutate(SEXO="Male")
+
+tra_may_F <- tra_may_12A %>% filter(SEXO=="Mujer") %>% mutate(SEXO="Female")
+
+
+###########################################################
+### B) CHANGE HIGHEST AGE DEPENDING ON NEEDS !!!!!!!!!!!!!! 
+###########################################################
+
+#### This next code piece excludes 2 females which potentially mess up the cluster plots
+
+# males
+tra_may_M <- tra_may_M %>% filter(Edadinicio_cuidado<100)
+# females
+tra_may_F <- tra_may_F %>% filter(Edadinicio_cuidado<100)
 
 ### 1.2. Create a matrix for the sequence analysis
 ### ---------------------------------------------
@@ -62,7 +80,7 @@ seqmat_F <- tra_may_F[,c(14:64)]
 SeqAlphab_C <- c("DF","ID", "DC")
 
 # Define color scheme
-Brewer_C <- brewer.pal(3, "Dark2")
+Brewer_C <- brewer.pal(3, "Set1")
 
 
 # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% #
@@ -88,6 +106,10 @@ seqplot(DisSeq_M,type = "I", with.legend = FALSE, sort="from.end")
 seqplot(DisSeq_F,type = "I", with.legend = FALSE, sort="from.end")
 
 ### 1.4.2 d- plot - cummulated state plot   - Very interesting relative frequency of states!
+
+# State distribution plot (type="d") represent the sequence of the cross-sectional state frequencies by position (time point) 
+# computed by the seqstatd function. Such plots are also known as chronograms
+
 par(mfrow=c(1,3))
 seqdplot(DisSeq_M, with.legend = FALSE)
 seqdplot(DisSeq_F, with.legend = FALSE)
@@ -97,7 +119,12 @@ seqlegend(DisSeq_M)
 seqstatd(DisSeq_M)
 seqstatd(DisSeq_F)
 
-### 1.4.4 - Transition Rates
+### 1.4.4 Modal State Sequence Plots by Age
+
+seqmsplot(DisSeq_M)
+seqmsplot(DisSeq_F)
+
+### 1.4.5 - Transition Rates
 
 # males
 round(seqtrate(DisSeq_M),2)
@@ -105,7 +132,7 @@ round(seqtrate(DisSeq_M),2)
 # females
 round(seqtrate(DisSeq_F),2)
 
-## 1.4.5 Turbulence as discrepancy measure
+## 1.4.6 Turbulence as discrepancy measure
 par(mfrow=c(1,2))
 # males
 hist(seqST(DisSeq_M))
@@ -292,7 +319,40 @@ tra_may_M <- tra_may_M %>% select(Id, clusters2, clusters4) %>%
 
 # females
 tra_may_F <- tra_may_F %>% select(Id, clusters2, clusters3) %>%
-             mutate(cluster2 = ifelse(clusters2==177, "late onset short", "early onset long")) %>%
-             mutate(cluster3 = ifelse(clusters3==1215, "early abrupt", 
-                    ifelse(clusters3==1427,"late abrupt", "early gradual"))) %>% 
+             mutate(cluster2 = ifelse(clusters2==1844, "late onset short", "early onset long")) %>%
+             mutate(cluster3 = ifelse(clusters3==1214, "early abrupt", 
+                    ifelse(clusters3==1426,"late abrupt", "early gradual"))) %>% 
              select(-clusters2, -clusters3)
+
+## 3.2 order data set for linkage to big data set
+
+# males
+tra_may_M <- tra_may_M[order(tra_may_M$Id),]
+
+# males
+tra_may_F <- tra_may_F[order(tra_may_F$Id),]
+
+## 3.3 Link back to big data set!
+
+# order big data + extract the two women with late onset of anything
+
+link.may <- link.may %>% filter(Edadinicio_cuidado<100)
+
+# make 2 data sets out of them (by sex) and order them
+
+link.may_M <- link.may %>% filter(Sex=="Male")
+link.may_F <- link.may %>% filter(Sex=="Female")
+
+
+link.may_M <- link.may_M[order(link.may_M$Id),]
+link.may_F <- link.may_F[order(link.may_F$Id),]
+
+## 3.4  Create working data sets for the mortality analysis
+link.may_M <- link.may_M %>% left_join(tra_may_M, by="Id")
+link.may_F <- link.may_F %>% left_join(tra_may_F, by="Id")
+
+
+### 3.5 save data
+
+# save(link.may_M, file='030_linkmay_M.RData')
+# save(link.may_F, file='030_linkmay_F.RData')

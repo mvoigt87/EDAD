@@ -1,3 +1,10 @@
+########################################################
+##### Analysis of mortality differences by pathway #####
+########################################################
+
+
+# 0.1 packages
+
 library(tidyverse)
 library(data.table)
 library(foreign)
@@ -5,21 +12,23 @@ library(survival)
 library(broom)
 library(stargazer)
 
-# --------------------------------------------
-load(file='010_mayor.link.RData')
-# --------------------------------------------
-# Select Population - Drop the "NC" cases for now and only extract the dependent ones
-# ------------------------------------------------------------------------------------
+# 0.3 Set right working directory
+dir()
+setwd("C:/Users/y4956294S/Documents/LONGPOP/Subproject 2 - SE differences in transition to dependency/R code/EDAD")
 
-link.may <- link.may %>% filter(LIMIT!="NC") %>% 
-  ####
-  ####
-  #### AND at this point only extract the ones who are dependent in 2008
-  ####
-  filter(!is.na(Edadinicio_cuidado))   
+# 0.2 data
+# --------------------------------------------
+# load(file='010_mayor.link.RData')
 
-link.may <- data.table(link.may)
-# 4761 cases - working material
+# prepared datasets
+load(file = 'datasets/030_linkmay_M.RData')
+load(file = 'datasets/030_linkmay_F.RData')
+# --------------------------------------------
+
+#### 1. Descriptive Analysis
+#### -----------------------
+
+
 
 
 ################
