@@ -28,7 +28,50 @@ load(file = 'datasets/030_linkmay_F.RData')
 #### 1. Descriptive Analysis
 #### -----------------------
 
+# Average age at death by cluster
 
+
+# mean and median age at death
+
+# males 2 clusters
+link.may_M %>% group_by(cluster2) %>% summarize(mean=mean(age.ex[event==1]), median=median(age.ex[event==1]))
+
+# males 3 clusters
+link.may_M %>% group_by(cluster4) %>% summarize(mean=mean(age.ex[event==1]), median=median(age.ex[event==1]))
+
+
+
+X <- tapply(link.may_M$age.ex, link.may_M$cluster2, summary)
+
+
+link.may_M <- data.table(link.may_M)
+
+# Kaplan Meier Estimator #
+# ---------------------- #
+
+# Males 2 cluster
+# ---------------
+
+mfit.1a <- survfit(coxph(Surv(time=EDAD,
+                              time2 = age.ex,
+                              event = event) ~ 1, data = subset(link.may_M, cluster2=="early onset")), data = subset(link.may_M, cluster2=="early onset"),
+                   type = "kaplan-meier")
+mfit.1b <- survfit(coxph(Surv(time=EDAD,
+                              time2 = age.ex,
+                              event = event) ~ 1, data = subset(link.may_M, cluster2=="late onset")), data = subset(link.may_M, cluster2=="late onset"),
+                   type = "kaplan-meier")
+
+
+KME.Clusta <- tidy(mfit.1a) %>% select(estimate, time) %>% mutate(sex = "early")
+KME.Clustb <- tidy(mfit.1b) %>% select(estimate, time) %>% mutate(sex = "late")
+
+KME.CLustM <- union(KME.Clusta, KME.Clustb)
+KME.CLustM %>% ggplot() +
+  geom_step(aes(x=time, y=estimate, color=sex)) +
+  scale_y_continuous(name = "Survival Probability")                  +
+  scale_x_continuous(name = "Age") +
+  scale_colour_manual(values = c("orange", "darkgrey"), name="")     +
+  theme_bw()
 
 
 ################

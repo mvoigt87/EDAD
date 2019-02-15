@@ -388,9 +388,10 @@ tra_may_C <- tra_may %>% mutate("50" = ifelse(EdadInicioDisca44>=50, "DF", ifels
 
 ### NEW: Disability Variable
 ### ------------------------
-tra_may_12A <- tra_may %>% 
-  # first taking care of those without A12 disability onset (make it the general)
-  mutate(edadiniciodisca12A = ifelse(is.na(edadiniciodisca12A),EdadInicioDisca44,edadiniciodisca12A)) %>% 
+# first taking care of those without A12 disability onset (make it the general)
+tra_may_12A <- subset(tra_may, !is.na(edadiniciodisca12A))
+  
+tra_may_12A <- tra_may_12A %>% 
   # now the hand work
   mutate("50" = ifelse(edadiniciodisca12A>=50, "DF", ifelse(Edadinicio_cuidado>=50, "ID", ifelse(EDAD>=50,"DC", NA)))) %>% 
   mutate("51" = ifelse(edadiniciodisca12A>=51, "DF", ifelse(Edadinicio_cuidado>=51, "ID", ifelse(EDAD>=51,"DC", NA)))) %>% 

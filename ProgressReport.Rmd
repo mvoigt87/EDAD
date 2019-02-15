@@ -1,0 +1,152 @@
+---
+title: "Progress Report - Pathways to Dependency"
+author: "Mathias Voigt"
+date: "15 de febrero de 2019"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# General Comments
+This document is an attempt to report on the progress and challenges regarding our project on pathways to dependency and their impact on survival disparities. I hope it will help us to stay up-to-date and work efficiently. I tried to address the comments and suggestions from the last meeting and invite you to comment on this document if things are not clear. 
+*Suggestion:* We could create a dropbox folder to keep it updated or you send me your comments per email.
+
+## Main Idea
+*The general idea will be formulated more eloquently once I started writing on the introduction to the paper.* Up to this point, I would formulate the idea of this project as follows: We are interested in if the health experience (stages of health/functionality) of individuals in need of a personal caretaker can be generalized/grouped. We assume that there are different pathways/trajectories. In a second step, we aim to analyse how such trajectories affect individual mortality risks. I hope you agree with me in this point and I will update this section as soon as possible knowing it is the heart of the pontential paper.
+```{r load myData, echo=FALSE, include=FALSE}
+setwd("C:/Users/y4956294S/Documents/LONGPOP/Subproject 2 - SE differences in transition to dependency/R code/EDAD")
+set.seed(17952)
+
+library(tidyverse)
+library(data.table)
+library(foreign)
+library(survival)
+library(broom)
+library(stargazer)
+library(TraMineR)
+library(reshape)
+library("RColorBrewer")
+library(cluster)
+library(WeightedCluster)
+
+load(file='010_mayor.link.RData')
+link.may <- link.may %>% filter(LIMIT!="NC") %>% 
+  ####
+  #### AND at this point only extract the ones who are dependent in 2008
+filter(!is.na(Edadinicio_cuidado))
+
+load("020_traMay.RData")
+# censored data
+load("020_traMay_C.RData")
+# censored data with age of onset of a 12 A (ADL group A) disability as transition point from disability free to idependent dis
+load("020_traMay_12A.RData")
+tra_may_M <- tra_may_C %>% filter(SEXO=="Varón") %>% mutate(SEXO="Male") %>% filter(Edadinicio_cuidado<100)
+tra_may_F <- tra_may_C %>% filter(SEXO=="Mujer") %>% mutate(SEXO="Female") %>% filter(Edadinicio_cuidado<100)
+tra_may_M_12A <- tra_may_12A %>% filter(SEXO=="Varón") %>% mutate(SEXO="Male") %>% filter(Edadinicio_cuidado<100)
+tra_may_F_12A <- tra_may_12A %>% filter(SEXO=="Mujer") %>% mutate(SEXO="Female") %>% filter(Edadinicio_cuidado<100)
+seqmat_M <- tra_may_M[,c(14:64)]
+seqmat_M_12A <- tra_may_M_12A[,c(14:64)]
+seqmat_F <- tra_may_F[,c(14:64)]
+seqmat_F_12A <- tra_may_F_12A[,c(14:64)]
+# Alphabet
+SeqAlphab_C <- c("DF","ID", "DC")
+# Define color scheme
+Brewer_C <- brewer.pal(3, "Set1")
+DisSeq_M <- seqdef(seqmat_M,informat = "STS", alphabet = SeqAlphab_C, id="auto", cpal =  Brewer_C ,start = 55, 
+                   labels = c("Disability Free","Idependent","Care"))
+DisSeq_M12A <- seqdef(seqmat_M_12A,informat = "STS", alphabet = SeqAlphab_C, id="auto", cpal =  Brewer_C ,start = 55, 
+                   labels = c("Disability Free","Idependent","Care"))
+DisSeq_F <- seqdef(seqmat_M,informat = "STS", alphabet = SeqAlphab_C, id="auto", cpal =  Brewer_C ,start = 55, 
+                   labels = c("Disability Free","Idependent","Care"))
+DisSeq_F12A <- seqdef(seqmat_M_12A,informat = "STS", alphabet = SeqAlphab_C, id="auto", cpal =  Brewer_C ,start = 55, 
+                   labels = c("Disability Free","Idependent","Care"))
+```
+## Population
+There are two subpopulations of the EDAD survey that differ slightly due to missing information on central variables. The base population includes all individuals who are older than 65 years at the time of observation in 2008 (EDAD survey), linked to MNP death register or Padron, and have stated to receive some form of personal care. In one case I used the population who stated that they have started to encounter problems with activities of independent daily life (IADL - grupo A). In this case I had to exclude a few people with missing information on these variables. I also excluded outlier with an onset age of disability older than 100.
+
+## Variables of interest
+* This will be updated soon *
+
+# Age at onset of dependency
+The descriptive data suggest that there are cases of age heaping (probably due to recall errors). We can discuss if we want to smooth and redistribute the ages of onset of dependency. 
+```{r depend, echo=FALSE}
+summary(link.may$Edadinicio_cuidado)
+link.may %>% 
+  ggplot(aes(x=Edadinicio_cuidado, fill=Gravity)) +
+  geom_histogram(binwidth =  1) +
+  scale_x_continuous(name = "Age") +
+  scale_fill_discrete(name = "") +
+  theme_bw()
+```
+# Age at onset of disability (all 44 disabilities):
+```{r disabil, echo=FALSE}
+summary(link.may$EdadInicioDisca44)
+link.may %>% 
+  ggplot(aes(x=EdadInicioDisca44, fill=Gravity)) +
+  geom_histogram(binwidth =  5) +
+  scale_x_continuous(name = "Age") +
+  scale_fill_discrete(name = "") +
+  theme_bw()
+```
+# The distribution of ages at death or right censoring:
+```{r edadmuerte, echo=FALSE}
+# link.may <- link.may %>% mutate(event = as.factor(ifelse(event==1, "dead", "alive")))
+# 
+# link.may %>%
+#   ggplot(aes(x=age.ex, fill=event)) +
+#   geom_histogram(bins = 44) +
+#   scale_x_continuous(name = "Age") +
+#   scale_fill_discrete(name = "") +
+#   theme_bw()
+
+# 
+# link.may <- data.table(link.may)
+# with(link.may, tapply(age.ex, list(event,sex), mean))
+```
+
+## Clustering Options
+
+I played around with different techniques over the last two weeks and will give you the data and plots on the clustering mechanism that, in my opinion, suits our project best. Please let me know if you have questions. First I decided to treat censoring as independent instead of treating it as a state. That means that an individual sequence stops at the last year of information (age of the individual in 2008). From there on I used two different onset variables to define if someone is disability-free or not. In case A), I took the onset of any disability (44 variables) as information for defining the first state change from disability-free to living with disability. In the other case (B) ), I used the onset age when someone started to have problems with activities of independent living (type A functionality disorder).
+# Cluster- or group selection with all disabilities
+These are the ordered state sequences for males (left) and females (right). The color legend has changed a little bit (red= disability free, blue= disabled but "independent", and green= dependent on personal care taker).
+
+```{r cluster, echo=FALSE}
+# 1.4.1 Sorted sequences for both sexes
+par(mfrow=c(1,2))
+seqplot(DisSeq_M,type = "I", with.legend = FALSE, sort="from.end")
+seqplot(DisSeq_F,type = "I", with.legend = FALSE, sort="from.end")
+```
+Below is the state distribution plot showing the relative distribution of states by age (values for later ages are distorted due to small case numbers = relative distribution). The other two plots show the modal state at any given age.
+
+```{r dplot, echo=FALSE}
+par(mfrow=c(1,3))
+seqdplot(DisSeq_M, with.legend = FALSE)
+seqdplot(DisSeq_F, with.legend = FALSE)
+seqlegend(DisSeq_M)
+par(mfrow=c(1,1))
+seqmsplot(DisSeq_M)
+seqmsplot(DisSeq_F)
+```
+From these state sequence dataset we create a weight matrix which will help us to group the sequences. Instead of the classic OM approach, I chose a matching process that takes the sequence lenght into account (that was one point in the meeting).
+```{r clustermatching, echo=FALSE, include=FALSE}
+# males
+submat_M <- seqsubm(DisSeq_M, method = "CONSTANT", cval = 2)
+# females
+submat_F <- seqsubm(DisSeq_F, method = "CONSTANT", cval = 2)
+# males (OMslen - spell-length sensitive)
+dismat_M2 <- seqdist(DisSeq_M, method = "OMslen", sm = submat_M)
+clusterw_M2 <- agnes(dismat_M2, diss = TRUE, method = "ward")
+
+# females (OMslen - spell-length sensitive)
+dismat_F2 <- seqdist(DisSeq_F, method = "OMslen", sm = submat_F)
+clusterw_F2 <- agnes(dismat_F2, diss = TRUE, method = "ward")
+```
+There is a statistical test suggested to run in order to obtain the best number of clusters/groups. The test statistic that is suggested to pay attention to is the ASW. The first suggestion in both cases seem to be 2 groups. To account for a little bit more heterogeneity, I would like to consider the second suggestion as well (4 groups).
+```{r teststat, echo=FALSE}
+data.clust_M2 <- wcKMedRange(dismat_M2, kvals=2:20)
+summary(data.clust_M2, max.rank = 2)
+data.clust_F2 <- wcKMedRange(dismat_F2, kvals=2:20)
+summary(data.clust_F2, max.rank = 2)
+```

@@ -221,25 +221,25 @@ summary(data.clust_F2, max.rank = 2)
 
 cluster2M <- cutree(clusterw_M, k = 2)
 cluster2M2 <- cutree(clusterw_M2, k = 2)
-cluster4M2 <- cutree(clusterw_M2, k = 4)
+cluster4M2 <- cutree(clusterw_M2, k = 3)
 
 cluster3F <- cutree(clusterw_F, k = 3)
 cluster2F2 <- cutree(clusterw_F2, k = 2)
-cluster3F2 <- cutree(clusterw_F2, k = 3)
+cluster3F2 <- cutree(clusterw_F2, k = 5)
 
 # Create three factors for grouping (for now without descriptive name)
 cluster2M <- factor(cluster2M, labels = c("Type 1", "Type 2"))
 table(cluster2M)
 cluster2M2 <- factor(cluster2M2, labels = c("Type 1", "Type 2"))
 table(cluster2M2)
-cluster4M2 <- factor(cluster4M2, labels = c("Type 1", "Type 2", "Type 3", "Type 4"))
+cluster4M2 <- factor(cluster4M2, labels = c("Type 1", "Type 2", "Type 3"))
 table(cluster4M2)
 
 cluster3F <- factor(cluster3F, labels = c("Type 1", "Type 2", "Type 3"))
 table(cluster3F)
 cluster2F2 <- factor(cluster2F2, labels = c("Type 1", "Type 2"))
 table(cluster2F2)
-cluster3F2 <- factor(cluster3F2, labels = c("Type 1", "Type 2", "Type 3"))
+cluster3F2 <- factor(cluster3F2, labels = c("Type 1", "Type 2", "Type 3", "Type 4", "Type 5"))
 table(cluster3F2)
 
 
@@ -281,7 +281,7 @@ seqmtplot(DisSeq_F, group = cluster3F2)
 tra_may_M$clusters2 <- data.clust_M2$clustering$cluster2
 
 # 4 groups (OMslen object)
-tra_may_M$clusters4 <- data.clust_M2$clustering$cluster4
+tra_may_M$clusters4 <- data.clust_M2$clustering$cluster3
 
 # females 
 # -------
@@ -290,7 +290,7 @@ tra_may_M$clusters4 <- data.clust_M2$clustering$cluster4
 tra_may_F$clusters2 <- data.clust_F2$clustering$cluster2
 
 # 4 groups (OMslen object)
-tra_may_F$clusters3 <- data.clust_F2$clustering$cluster3
+tra_may_F$clusters5 <- data.clust_F2$clustering$cluster5
 
 
 # 2.7 Graphical check for the cluster
@@ -302,7 +302,7 @@ seqdplot(DisSeq_M, group=tra_may_M$clusters4)
 
 # females 2 and 3 groups
 seqdplot(DisSeq_F, group=tra_may_F$clusters2)
-seqdplot(DisSeq_F, group=tra_may_F$clusters3)
+seqdplot(DisSeq_F, group=tra_may_F$clusters5)
 
 
 # 3. Calculate medium age at death per cluster
