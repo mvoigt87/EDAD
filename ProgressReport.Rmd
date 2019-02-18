@@ -6,7 +6,11 @@ output: word_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = FALSE)
+library(foreign)
+library(survival)
+library(broom)
+library(stargazer)
 ```
 
 # General Comments
@@ -58,19 +62,19 @@ DisSeq_M <- seqdef(seqmat_M,informat = "STS", alphabet = SeqAlphab_C, id="auto",
                    labels = c("Disability Free","Idependent","Care"))
 DisSeq_M12A <- seqdef(seqmat_M_12A,informat = "STS", alphabet = SeqAlphab_C, id="auto", cpal =  Brewer_C ,start = 55, 
                    labels = c("Disability Free","Idependent","Care"))
-DisSeq_F <- seqdef(seqmat_M,informat = "STS", alphabet = SeqAlphab_C, id="auto", cpal =  Brewer_C ,start = 55, 
+DisSeq_F <- seqdef(seqmat_F,informat = "STS", alphabet = SeqAlphab_C, id="auto", cpal =  Brewer_C ,start = 55, 
                    labels = c("Disability Free","Idependent","Care"))
-DisSeq_F12A <- seqdef(seqmat_M_12A,informat = "STS", alphabet = SeqAlphab_C, id="auto", cpal =  Brewer_C ,start = 55, 
+DisSeq_F12A <- seqdef(seqmat_F_12A,informat = "STS", alphabet = SeqAlphab_C, id="auto", cpal =  Brewer_C ,start = 55, 
                    labels = c("Disability Free","Idependent","Care"))
 ```
 ## Population
 There are two subpopulations of the EDAD survey that differ slightly due to missing information on central variables. The base population includes all individuals who are older than 65 years at the time of observation in 2008 (EDAD survey), linked to MNP death register or Padron, and have stated to receive some form of personal care. In one case I used the population who stated that they have started to encounter problems with activities of independent daily life (IADL - grupo A). In this case I had to exclude a few people with missing information on these variables. I also excluded outlier with an onset age of disability older than 100.
 
-## Variables of interest
-* This will be updated soon *
+# Variables of interest
+*This will be updated soon*
 
 # Age at onset of dependency
-The descriptive data suggest that there are cases of age heaping (probably due to recall errors). We can discuss if we want to smooth and redistribute the ages of onset of dependency. 
+The descriptive data suggest that there are cases of age heaping especially for the age of onset of disability (probably due to recall errors). The graph below depicts the distribution of ages at onset of dependency by severity (2 categories). Antonio mentioned that age information may be biased as they asked elderly/disabled or their caretakers about a large number of different limitations.  We can discuss smoothing and redistribution of ages of onset of disabilty/dependency.
 ```{r depend, echo=FALSE}
 summary(link.may$Edadinicio_cuidado)
 link.may %>% 
@@ -80,7 +84,7 @@ link.may %>%
   scale_fill_discrete(name = "") +
   theme_bw()
 ```
-# Age at onset of disability (all 44 disabilities):
+## Age at onset of disability (all 44 disabilities):
 ```{r disabil, echo=FALSE}
 summary(link.may$EdadInicioDisca44)
 link.may %>% 
@@ -90,8 +94,9 @@ link.may %>%
   scale_fill_discrete(name = "") +
   theme_bw()
 ```
-# The distribution of ages at death or right censoring:
+
 ```{r edadmuerte, echo=FALSE}
+# The distribution of ages at death or right censoring:
 # link.may <- link.may %>% mutate(event = as.factor(ifelse(event==1, "dead", "alive")))
 # 
 # link.may %>%
@@ -105,12 +110,10 @@ link.may %>%
 # link.may <- data.table(link.may)
 # with(link.may, tapply(age.ex, list(event,sex), mean))
 ```
-
-## Clustering Options
-
-I played around with different techniques over the last two weeks and will give you the data and plots on the clustering mechanism that, in my opinion, suits our project best. Please let me know if you have questions. First I decided to treat censoring as independent instead of treating it as a state. That means that an individual sequence stops at the last year of information (age of the individual in 2008). From there on I used two different onset variables to define if someone is disability-free or not. In case A), I took the onset of any disability (44 variables) as information for defining the first state change from disability-free to living with disability. In the other case (B) ), I used the onset age when someone started to have problems with activities of independent living (type A functionality disorder).
-# Cluster- or group selection with all disabilities
-These are the ordered state sequences for males (left) and females (right). The color legend has changed a little bit (red= disability free, blue= disabled but "independent", and green= dependent on personal care taker).
+# Clustering
+I played around with different techniques over the last two weeks and will give you the data and plots on the clustering mechanism that, in my opinion, suits our analysis best. Please let me know if you have questions. First, I decided to treat censoring as independent in contrast of treating it as a state as before. That means that an individual sequence stops at the last year of information (age of the individual in 2008). From there on I used two different onset variables to define if someone is disability-free or lives independently with disability. In case A.), I took the onset age for any disability (all 44 variables) for defining the first state change from disability-free to living with disability. In the other case (B.) ), I used the onset age when someone started to have problems with activities of independent living (type A functionality disorder = Onset of a IADL).
+## Cluster- or group selection with all disabilities (case A.))
+These are the ordered state sequences for males (left) and females (right) for case A.). The color legend has changed a little bit (red= disability free, blue= disabled but "independent", and green= dependent on personal care taker).
 
 ```{r cluster, echo=FALSE}
 # 1.4.1 Sorted sequences for both sexes
@@ -129,7 +132,7 @@ par(mfrow=c(1,1))
 seqmsplot(DisSeq_M)
 seqmsplot(DisSeq_F)
 ```
-From these state sequence dataset we create a weight matrix which will help us to group the sequences. Instead of the classic OM approach, I chose a matching process that takes the sequence lenght into account (that was one point in the meeting).
+From these state sequence dataset we create a cost matrix which will help us to group the sequences. The last time I showed you results based on the classic OM approach. This method seems to be outdated so, I chose a adjusted OM process that takes the sequence lenght into account (that was one point in the meeting). There are many other methods which work better for different kind of data or interests (sequence lengths, sequence order etc.).
 ```{r clustermatching, echo=FALSE, include=FALSE}
 # males
 submat_M <- seqsubm(DisSeq_M, method = "CONSTANT", cval = 2)
@@ -143,10 +146,224 @@ clusterw_M2 <- agnes(dismat_M2, diss = TRUE, method = "ward")
 dismat_F2 <- seqdist(DisSeq_F, method = "OMslen", sm = submat_F)
 clusterw_F2 <- agnes(dismat_F2, diss = TRUE, method = "ward")
 ```
-There is a statistical test suggested to run in order to obtain the best number of clusters/groups. The test statistic that is suggested to pay attention to is the ASW. The first suggestion in both cases seem to be 2 groups. To account for a little bit more heterogeneity, I would like to consider the second suggestion as well (4 groups).
+There is a statistical test to obtain the best number of clusters/groups. If you wish, I can forward you the literature. The test statistic that is suggested to pay attention to is the ASW. The first suggestion in both cases seem to be 2 groups. To account for a little bit more heterogeneity, I would consider the second suggestion as well which is 4 groups for men and 3 for women.
 ```{r teststat, echo=FALSE}
 data.clust_M2 <- wcKMedRange(dismat_M2, kvals=2:20)
 summary(data.clust_M2, max.rank = 2)
 data.clust_F2 <- wcKMedRange(dismat_F2, kvals=2:20)
 summary(data.clust_F2, max.rank = 2)
+cluster2M2 <- cutree(clusterw_M2, k = 2)
+cluster4M2 <- cutree(clusterw_M2, k = 4)
+cluster2F2 <- cutree(clusterw_F2, k = 2)
+cluster3F2 <- cutree(clusterw_F2, k = 3)
+
+cluster2M2 <- factor(cluster2M2, labels = c("Type 1", "Type 2"))
+cluster4M2 <- factor(cluster4M2, labels = c("Type 1", "Type 2", "Type 3","Type 4"))
+cluster2F2 <- factor(cluster2F2, labels = c("Type 1", "Type 2"))
+cluster3F2 <- factor(cluster3F2, labels = c("Type 1", "Type 2", "Type 3"))
+
+```
+In the first graph below there are example sequences for each group/cluster similar to those I showed you at the last meeting. The second type of graph shows the mean time spent in each state by group. The first 4 graphs are regarding males, the second 4 females. While in the two the version with the 2 clusters we just distinguish between the ones with long periods of disability before receiving care and those with very rapid transitions, the 4 scenario appears to give us a little bit more variation about when things happen (earlier or later in life). Personally, I think that could add an important piece of information.
+```{r clustergraphs, echo=FALSE}
+seqfplot(DisSeq_M, group = cluster2M2, pbarw = F)
+seqfplot(DisSeq_M, group = cluster4M2, pbarw = F)
+seqmtplot(DisSeq_M, group = cluster2M2)
+seqmtplot(DisSeq_M, group = cluster4M2)
+
+seqfplot(DisSeq_F, group = cluster2F2, pbarw = F)
+seqfplot(DisSeq_F, group = cluster3F2, pbarw = F)
+seqmtplot(DisSeq_F, group = cluster2F2)
+seqmtplot(DisSeq_F, group = cluster3F2)
+
+# here the part with the cluster assigning back to the data
+# males 
+# -----
+
+# 2 groups (OMslen object)
+tra_may_M$clusters2 <- data.clust_M2$clustering$cluster2
+
+# 4 groups (OMslen object)
+tra_may_M$clusters4 <- data.clust_M2$clustering$cluster4
+
+# females 
+# -------
+
+# 2 groups (OMslen object)
+tra_may_F$clusters2 <- data.clust_F2$clustering$cluster2
+
+# 4 groups (OMslen object)
+tra_may_F$clusters3 <- data.clust_F2$clustering$cluster3
+
+# males
+tra_may_M <- tra_may_M %>% select(Id, clusters2, clusters4) %>% 
+              mutate(cluster2 = ifelse(clusters2==177, "late onset", "early onset")) %>% 
+              mutate(cluster4 = ifelse(clusters4==143, "late gradual", ifelse(clusters4==1472, "early gradual",
+                                 ifelse(clusters4==256, "late healthy", "late abrupt")))) %>% 
+              select(-clusters4, - clusters2)
+
+# females
+tra_may_F <- tra_may_F %>% select(Id, clusters2, clusters3) %>%
+             mutate(cluster2 = ifelse(clusters2==1844, "late onset short", "early onset long")) %>%
+             mutate(cluster3 = ifelse(clusters3==1214, "early abrupt", 
+                    ifelse(clusters3==1426,"late abrupt", "early gradual"))) %>% 
+             select(-clusters2, -clusters3)
+# males
+tra_may_M <- tra_may_M[order(tra_may_M$Id),]
+
+# males
+tra_may_F <- tra_may_F[order(tra_may_F$Id),]
+
+## 3.3 Link back to big data set!
+
+# order big data + extract the two women with late onset of anything
+
+link.may <- link.may %>% filter(Edadinicio_cuidado<100)
+
+# make 2 data sets out of them (by sex) and order them
+
+link.may_M <- link.may %>% filter(Sex=="Male")
+link.may_F <- link.may %>% filter(Sex=="Female")
+
+
+link.may_M <- link.may_M[order(link.may_M$Id),]
+link.may_F <- link.may_F[order(link.may_F$Id),]
+
+## 3.4  Create working data sets for the mortality analysis
+link.may_M <- link.may_M %>% left_join(tra_may_M, by="Id")
+link.may_F <- link.may_F %>% left_join(tra_may_F, by="Id")
+
+```
+Below I estimated the median age at death (after age 65) for each group. I do not see anything extremely surprising. Looks like a late onset of disability is associated with at later average age at death. Of course that will be double-checked and tested against covariates.
+```{r median age at death by group, echo=FALSE}
+# males 2 clusters
+link.may_M %>% mutate(Male2Groups=cluster2) %>% group_by(Male2Groups) %>% summarize(mean=mean(age.ex[event==1]), median=median(age.ex[event==1]))
+# males 3 clusters
+link.may_M %>% mutate(Male4Groups=cluster4) %>% group_by(Male4Groups) %>% summarize(mean=mean(age.ex[event==1]), median=median(age.ex[event==1]))
+
+# females 2 clusters
+link.may_F %>% mutate(Female2Groups=cluster2) %>% group_by(Female2Groups) %>% summarize(mean=mean(age.ex[event==1]), median=median(age.ex[event==1]))
+# females 3 clusters
+link.may_F %>% mutate(Female3Groups=cluster3) %>% group_by(Female3Groups) %>% summarize(mean=mean(age.ex[event==1]), median=median(age.ex[event==1]))
+
+```
+## Cluster- or group selection by functionality - IADL (case B.))
+From here on I will go over the same procedure as before but use a different selection criteria for the onset of disability The dataset is a little bit smaller because there were a handful of females for which we did not have the information.
+```{r cluster12A, echo=FALSE}
+# 1.4.1 Sorted sequences for both sexes
+par(mfrow=c(1,2))
+seqplot(DisSeq_M12A,type = "I", with.legend = FALSE, sort="from.end")
+seqplot(DisSeq_F12A,type = "I", with.legend = FALSE, sort="from.end")
+
+par(mfrow=c(1,3))
+seqdplot(DisSeq_M12A, with.legend = FALSE)
+seqdplot(DisSeq_F12A, with.legend = FALSE)
+seqlegend(DisSeq_M12A)
+par(mfrow=c(1,1))
+seqmsplot(DisSeq_M12A)
+seqmsplot(DisSeq_F12A)
+
+# males
+submat_MA12 <- seqsubm(DisSeq_M12A, method = "CONSTANT", cval = 2)
+# females
+submat_FA12 <- seqsubm(DisSeq_F12A, method = "CONSTANT", cval = 2)
+# males (OMslen - spell-length sensitive)
+dismat_M2A12 <- seqdist(DisSeq_M12A, method = "OMslen", sm = submat_MA12)
+clusterw_M2A12 <- agnes(dismat_M2A12, diss = TRUE, method = "ward")
+
+# females (OMslen - spell-length sensitive)
+dismat_F2A12 <- seqdist(DisSeq_F12A, method = "OMslen", sm = submat_FA12)
+clusterw_F2A12 <- agnes(dismat_F2A12, diss = TRUE, method = "ward")
+```
+Interesting enough, these graphs seem to tell a story closer to how I imagine the reality, at least from the distributions at the older ages and the modal state, which is "receiving care" after a certain age. In case B), while the best scenario seems to be 2 groups for both sexes, the second best group number is 3 for males and 5 for females. As in case A) I went on with both group/cluster sizes.
+```{r teststat2, echo=FALSE}
+data.clust_M2A12 <- wcKMedRange(dismat_M2A12, kvals=2:20)
+summary(data.clust_M2A12, max.rank = 2)
+data.clust_F2A12 <- wcKMedRange(dismat_F2A12, kvals=2:20)
+summary(data.clust_F2A12, max.rank = 2)
+# the best two options
+cluster2MA12_2 <- cutree(clusterw_M2A12, k = 2)
+cluster3MA12_2 <- cutree(clusterw_M2A12, k = 3)
+cluster2FA12_2 <- cutree(clusterw_F2A12, k = 2)
+cluster5FA12_2 <- cutree(clusterw_F2A12, k = 5)
+
+cluster2MA12_2 <- factor(cluster2MA12_2, labels = c("Type 1", "Type 2"))
+cluster3MA12_2  <- factor(cluster3MA12_2, labels = c("Type 1", "Type 2", "Type 3"))
+cluster2FA12_2 <- factor(cluster2FA12_2, labels = c("Type 1", "Type 2"))
+cluster5FA12_2 <- factor(cluster5FA12_2, labels = c("Type 1", "Type 2", "Type 3","Type 4", "Type 5"))
+
+```
+```{r clustergraphs2, echo=FALSE}
+seqfplot(DisSeq_M12A, group = cluster2MA12_2, pbarw = F)
+seqfplot(DisSeq_M12A, group = cluster3MA12_2, pbarw = F)
+seqmtplot(DisSeq_M12A, group = cluster2MA12_2)
+seqmtplot(DisSeq_M12A, group = cluster3MA12_2)
+
+seqfplot(DisSeq_F12A, group = cluster2FA12_2, pbarw = F)
+seqfplot(DisSeq_F12A, group = cluster5FA12_2, pbarw = F)
+seqmtplot(DisSeq_F12A, group = cluster2FA12_2)
+seqmtplot(DisSeq_F12A, group = cluster5FA12_2)
+
+# here the part with the cluster assigning back to the data
+# males 
+# -----
+
+# 2 groups (OMslen object)
+tra_may_M_12A$clusters2 <- data.clust_M2A12$clustering$cluster2
+
+# 4 groups (OMslen object)
+tra_may_M_12A$clusters3 <- data.clust_M2A12$clustering$cluster3
+
+# females 
+# -------
+
+# 2 groups (OMslen object)
+tra_may_F_12A$clusters2 <- data.clust_F2A12$clustering$cluster2
+
+# 4 groups (OMslen object)
+tra_may_F_12A$clusters5 <- data.clust_F2A12$clustering$cluster5
+
+# males
+tra_may_M_12A <- tra_may_M_12A %>% select(Id, clusters2, clusters3) %>%
+              mutate(cluster2 = ifelse(clusters2==5, "late onset", "early onset")) %>%
+              mutate(cluster3 = ifelse(clusters3==345, "late gradual", ifelse(clusters3==88, "early gradual","late abrupt"))) %>%           select(-clusters2, - clusters3)
+
+# females
+tra_may_F_12A <- tra_may_F_12A %>% select(Id, clusters2, clusters5) %>%
+             mutate(cluster2 = ifelse(clusters2==281, "late onset short", "early onset long")) %>%
+             mutate(cluster5 = ifelse(clusters5==3001, "early abrupt",
+                    ifelse(clusters5==56,"late abrupt", ifelse(clusters5==1852,"middle gradual", 
+                                                               ifelse(clusters5==3018, "early gradual", "late gradual"))))) %>%
+             select(-clusters2, -clusters5)
+# males
+tra_may_M_12A <- tra_may_M_12A[order(tra_may_M_12A$Id),]
+
+# males
+tra_may_F_12A <- tra_may_F_12A[order(tra_may_F_12A$Id),]
+
+# order big data + extract the two women with late onset of anything
+
+link.may12A <- link.may %>% filter(Edadinicio_cuidado<100) %>% filter(!is.na(edadiniciodisca12A))
+
+# make 2 data sets out of them (by sex) and order them
+
+link.may_M12A <- link.may12A %>% filter(Sex=="Male")
+link.may_F12A <- link.may12A %>% filter(Sex=="Female")
+
+## 3.4  Create working data sets for the mortality analysis
+link.may_M12A <- link.may_M12A %>% left_join(tra_may_M_12A, by="Id")
+link.may_F12A <- link.may_F12A %>% left_join(tra_may_F_12A, by="Id")
+
+```
+And again the median and mean ages at death. This is of course just a descriptive statistic but the differences appear to be much smaller and are therefore harder to interpret.
+```{r median age at death by group2, echo=FALSE}
+# males 2 clusters
+link.may_M12A %>% mutate(Male2Groups=cluster2) %>% group_by(Male2Groups) %>% summarize(mean=mean(age.ex[event==1]), median=median(age.ex[event==1]))
+# males 3 clusters
+link.may_M12A %>% mutate(Male3Groups=cluster3) %>% group_by(Male3Groups) %>% summarize(mean=mean(age.ex[event==1]), median=median(age.ex[event==1]))
+
+# females 2 clusters
+link.may_F12A %>% mutate(Female2Groups=cluster2) %>% group_by(Female2Groups) %>% summarize(mean=mean(age.ex[event==1]), median=median(age.ex[event==1]))
+# females 3 clusters
+link.may_F12A %>% mutate(Female5Groups=cluster5) %>% group_by(Female5Groups) %>% summarize(mean=mean(age.ex[event==1]), median=median(age.ex[event==1]))
+
 ```

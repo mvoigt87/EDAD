@@ -232,15 +232,15 @@ cluster2M <- factor(cluster2M, labels = c("Type 1", "Type 2"))
 table(cluster2M)
 cluster2M2 <- factor(cluster2M2, labels = c("Type 1", "Type 2"))
 table(cluster2M2)
-cluster4M2 <- factor(cluster4M2, labels = c("Type 1", "Type 2", "Type 3"))
+cluster4M2 <- factor(cluster4M2, labels = c("Type 1", "Type 2", "Type 3","Type 4"))
 table(cluster4M2)
 
 cluster3F <- factor(cluster3F, labels = c("Type 1", "Type 2", "Type 3"))
 table(cluster3F)
 cluster2F2 <- factor(cluster2F2, labels = c("Type 1", "Type 2"))
 table(cluster2F2)
-cluster3F2 <- factor(cluster3F2, labels = c("Type 1", "Type 2", "Type 3", "Type 4", "Type 5"))
-table(cluster3F2)
+cluster4F2 <- factor(cluster4F2, labels = c("Type 1", "Type 2", "Type 3", "Type 4"))
+table(cluster4F2)
 
 
 # 2.5 Plotting the group characteristics 
