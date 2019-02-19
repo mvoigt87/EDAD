@@ -2,6 +2,8 @@
 ##### Analysis of mortality differences by pathway #####
 ########################################################
 
+### Code file for the descriptive analysis in preparation of the Main Models
+### ------------------------------------------------------------------------
 
 # 0.1 packages
 
@@ -10,7 +12,7 @@ library(data.table)
 library(foreign)
 library(survival)
 library(broom)
-library(stargazer)
+
 
 # 0.3 Set right working directory
 dir()
@@ -20,18 +22,29 @@ setwd("C:/Users/y4956294S/Documents/LONGPOP/Subproject 2 - SE differences in tra
 # --------------------------------------------
 # load(file='010_mayor.link.RData')
 
-# prepared datasets
+# prepared datasets (see R file 025_CleanCluster)
+
+# A 12 data
+load(file = '030_linkmay_M_12A.RData')
+load(file = '030_linkmay_F_12A.RData')
+
+link.may_M2 <- link.may_M
+link.may_F2 <- link.may_F
+
+# Disca 44 file
 load(file = 'datasets/030_linkmay_M.RData')
 load(file = 'datasets/030_linkmay_F.RData')
-# --------------------------------------------
-
-#### 1. Descriptive Analysis
-#### -----------------------
-
-# Average age at death by cluster
 
 
-# mean and median age at death
+
+##### 1. Ages at death (by sex and cluster)
+##### %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+## -------------------------------------------
+## 1.2 Mean and median age at death by cluster
+## -------------------------------------------
+
+# A) DISCA 44
 
 # males 2 clusters
 link.may_M %>% group_by(cluster2) %>% summarize(mean=mean(age.ex[event==1]), median=median(age.ex[event==1]))
@@ -40,17 +53,25 @@ link.may_M %>% group_by(cluster2) %>% summarize(mean=mean(age.ex[event==1]), med
 link.may_M %>% group_by(cluster4) %>% summarize(mean=mean(age.ex[event==1]), median=median(age.ex[event==1]))
 
 
+# A) A 12 INCAPACITY
+summary(link.may_M2$age.ex[link.may_M2$event==1])
 
-X <- tapply(link.may_M$age.ex, link.may_M$cluster2, summary)
+
+##### 2. Distribution of explanatory variables by sex and cluster
+##### %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
-link.may_M <- data.table(link.may_M)
 
-# Kaplan Meier Estimator #
-# ---------------------- #
 
-# Males 2 cluster
-# ---------------
+##### 3. Bi-variate Survival Analysis (KMEs)
+##### %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+####### %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% ########
+####### !!! Change the number after "clustering$cluster" depending on the optimal group/cluster size ########
+####### %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% ########
+
+# Males first cluster option
+# --------------------------
 
 mfit.1a <- survfit(coxph(Surv(time=EDAD,
                               time2 = age.ex,
@@ -73,15 +94,15 @@ KME.CLustM %>% ggplot() +
   scale_colour_manual(values = c("orange", "darkgrey"), name="")     +
   theme_bw()
 
+# Males second cluster option
+# ---------------------------
 
-################
-### Survival ### 
-################
 
-#     To account for left truncation, a cox ph approximation is used to estimate the KME
+#   !!!!!  To account for left truncation, a cox ph approximation is used to estimate the KME
 
-# First a KME for sex differences
-#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%#
+
+# KME for sex differences #
+# %%%%%%%%%%%%%%%%%%%%%%% #
 
 mfit.2a <- survfit(coxph(Surv(time=EDAD,
                               time2 = age.ex,
@@ -110,8 +131,8 @@ KME.SEXO %>% ggplot() +
 
 
 
-# KME by time in disability
-#%%%%%%%%%%%%%%%%%%%%%%%%%%%#
+#  KME by time in disability  #
+# %%%%%%%%%%%%%%%%%%%%%%%%%%% #
 
 
 ## Therefore: Creating a for now arbitrary variable to group different transitions by time
@@ -190,43 +211,3 @@ km.1 <- km.1 + theme(legend.position = c(0.85, 0.85)) +
 # Just need the get the noise in the beginning under control
 
 rm(KM.LIM.a, KM.LIM.b, KM.LIM.c, help.KM1, help.KM2, help.KM3)
-
-
-
-###############################
-### Exploratory Cox Regression
-###############################
-
-# Preliminary step: Change Reference Category and Category names
-link.may$group.d.d <- as.factor(link.may$group.d.d)
-link.may <- within(link.may, group.d.d <- relevel(group.d.d, ref = "gradual"))  
-link.may$Sex <- as.factor(link.may$Sex)
-link.may <- within(link.may, Sex <- relevel(Sex, ref = "Female"))  
-link.may <- within(link.may, Education <- relevel(Education, ref = "High"))  
-link.may <- within(link.may, Income <- relevel(Income, ref = "625+ eur"))  
-
-# Just the transitions
-Cox.CFP.a <- coxph(Surv(time=EDAD,
-                        time2=age.ex,
-                        event=event) ~ group.d.d, 
-                   data=subset(link.may))
-
-summary(Cox.CFP.a)
-
-# Plus a few ses variables
-Cox.CFP.b <- coxph(Surv(time=EDAD,
-                        time2=age.ex,
-                        event=event) ~ group.d.d + Sex + Education + Income, 
-                   data=subset(link.may))
-
-summary(Cox.CFP.b)
-
-# table for CFP
-# -------------
-
-stargazer(Cox.CFP.a, Cox.CFP.b, title ="Cox PH Model",no.space=F, 
-          ci=T, ci.level=0.95, omit.stat=c("max.rsq"),dep.var.labels=c("Hazard Ratios"),
-          covariate.labels=c("Acute Transition", "Moderate Transition", "Male", "Low Education",
-                             "Low Income (<625 Eur)"),
-          single.row=T, apply.coef = exp)
-
