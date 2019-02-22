@@ -40,9 +40,22 @@ link.may <- data.table(link.may)
 # ---------------------------------------------
 # ---------------------------------------------
 
+# 1.1.1. Correctness of age information
+########################################
+
+# Checks for Disability and Death
+# link.may %>% count(EDAD < age.ex)
+link.may %>% count(EdadInicioDisca44 < age.ex)
+link.may %>% count(round(EdadInicioDisca44,0) < round(EDAD,0))   ### THIS SHOULD NOT BE POSSIBLE
+
+## FIX (Listwise deletion)
+
+link.may <- link.may %>% filter(round(EdadInicioDisca44,0) < round(EDAD,0))  # 215 cases
+
 
 # 1.1.2 Age distribution (disability)
 #####################################
+
 
 # Exit age
 # ---------
@@ -159,23 +172,6 @@ summary(abc)
   
   ## 3.2. Define an alphabet for the different states an individual can obtain
   ## -------------------------------------------------------------------------
-  
-      # Alphabet 1 (5 states)
-        # DF = Disability Free
-        # ID = Idenpendent albeit first disability
-        # ADL = Problems ADL - Help with Housework combined with "needs assistance" (NA) 
-        # DC = Dependent on Caretaker
-        # C = Censored
-      
-        # Think about a censorship state for younger individuals (C)
-  
-  SeqAlphab_1 <- c("DF","ID", "ADL", "DC", "C")
-  
-  # 3.3. Define color scheme
-  display.brewer.all()
-  Brewer_1 <- brewer.pal(5, "Dark2")
-  
-  # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% #
   
   # Alphabet 2 (4-5 states)
   # DF = Disability Free
@@ -447,9 +443,9 @@ tra_may_12A <- tra_may_12A %>%
 
 ### save data
 
-# save(tra_may, file='020_traMay.RData')
-# save(tra_may_C, file='020_traMay_C.RData')
-# save(tra_may_12A, file='020_traMay_12A.RData')
+# save(tra_may, file='datasets/020_traMay.RData')
+# save(tra_may_C, file='datasets/020_traMay_C.RData')
+# save(tra_may_12A, file='datasets/020_traMay_12A.RData')
 
 #### ---------------------------------------------------------------------------------------------------------------- ####
 #### ---------------------------------------------------------------------------------------------------------------- ####

@@ -347,6 +347,12 @@ hist(link.may$age.ex) # looks ok!
 # Look at the entry to exit age relationship - no cases with lower
 link.may %>% count(EDAD < age.ex)   
 
+# Little FIX
+link.may %>% count(EDAD < EdadInicioDisca44)
+link.may %>% count(EDAD < Edadinicio_cuidado)
+
+link.may <- link.may %>% filter(round(EdadInicioDisca44,0) < round(EDAD,0))  # 215 cases
+
 
 # entry in disability (What does the 13 mean?)
 # --------------------------------------------
