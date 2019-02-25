@@ -121,11 +121,12 @@ mfit.1b <- survfit(coxph(Surv(time=EDAD,
 
 mfit.1c <- survfit(coxph(Surv(time=EDAD,
                               time2 = age.ex,
-                              event = event) ~ 1, data = subset(link.may_F, cluster2=="early onset")), data = subset(link.may_F, cluster2=="early onset"),
+                              event = event) ~ 1, data = subset(link.may_F, cluster2=="early onset long")), data = subset(link.may_F, cluster2=="early onset long"),
                    type = "kaplan-meier")
+
 mfit.1d <- survfit(coxph(Surv(time=EDAD,
                               time2 = age.ex,
-                              event = event) ~ 1, data = subset(link.may_F, cluster2=="late onset")), data = subset(link.may_F, cluster2=="late onset"),
+                              event = event) ~ 1, data = subset(link.may_F, cluster2=="late onset short")), data = subset(link.may_F, cluster2=="late onset short"),
                    type = "kaplan-meier")
 
 KME.Clusta <- tidy(mfit.1a) %>% select(estimate, time) %>% mutate(disab = "early") %>% mutate(sex="male")
@@ -199,7 +200,7 @@ mfit.3b <- survfit(coxph(Surv(time=t.entrada,
 
 mfit.3c <- survfit(coxph(Surv(time=t.entrada,
                               time2 = t.salida,
-                              event = event) ~ 1, data = subset(link.may_M, cluster4=="middle abrupt")), data = subset(link.may_M, cluster4=="middle abrupt"),
+                              event = event) ~ 1, data = subset(link.may_M, cluster4=="late gradual")), data = subset(link.may_M, cluster4=="late gradual"),
                    type = "kaplan-meier")
 
 mfit.3d <- survfit(coxph(Surv(time=t.entrada,
@@ -209,7 +210,7 @@ mfit.3d <- survfit(coxph(Surv(time=t.entrada,
 
 KME.Clusta <- tidy(mfit.3a) %>% select(estimate, time) %>% mutate(dis = "early abrupt")
 KME.Clustb <- tidy(mfit.3b) %>% select(estimate, time) %>% mutate(dis = "early gradual")
-KME.Clustc <- tidy(mfit.3c) %>% select(estimate, time) %>% mutate(dis = "middle abrupt")
+KME.Clustc <- tidy(mfit.3c) %>% select(estimate, time) %>% mutate(dis = "late gradual")
 KME.Clustd <- tidy(mfit.3d) %>% select(estimate, time) %>% mutate(dis = "late abrupt")
 
 KME.CLustM <- union(KME.Clusta, KME.Clustb) %>% union(KME.Clustc) %>% union(KME.Clustd)

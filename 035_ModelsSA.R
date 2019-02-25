@@ -49,6 +49,86 @@ link.may <- within(link.may, Sex <- relevel(Sex, ref = "Female"))
 link.may <- within(link.may, Education <- relevel(Education, ref = "High"))  
 link.may <- within(link.may, Income <- relevel(Income, ref = "625+ eur"))  
 
+
+
+
+# exit time (month/12+year)
+link.may_M <- link.may_M %>% mutate(t.salida = a_salida+(m_salida/12))
+#hist(link.may_F$t.salida)
+# entry time (month/12+year) - onset of disability
+link.may_M <- link.may_M %>% mutate(t.entrada = 2006.99 - (EDAD-Edadinicio_cuidado)) # same story with inicio Disca44
+
+# exit time (month/12+year)
+link.may_F <- link.may_F %>% mutate(t.salida = a_salida+(m_salida/12))
+#hist(link.may_F$t.salida)
+# entry time (month/12+year) - onset of disability
+link.may_F <- link.may_F %>% mutate(t.entrada = 2006.99 - (EDAD-Edadinicio_cuidado)) # same story with inicio Disca44
+
+
+# males
+Cox.CFP.a <- coxph(Surv(time=t.entrada,
+                        time2=t.salida,
+                        event=event) ~ cluster2, 
+                   data=subset(link.may_M))
+
+Cox.CFP.a
+
+# females
+Cox.CFP.b <- coxph(Surv(time=t.entrada,
+                        time2=t.salida,
+                        event=event) ~ cluster2, 
+                   data=subset(link.may_F))
+
+Cox.CFP.b
+
+
+
+
+
+# Plus SES variables
+
+# males
+Cox.CFP.e <- coxph(Surv(time=t.entrada,
+                        time2=t.salida,
+                        event=event) ~ cluster2 + Education + Income + EDAD,
+                   data=subset(link.may_M))
+
+Cox.CFP.e
+
+# females
+Cox.CFP.f <- coxph(Surv(time=t.entrada,
+                        time2=t.salida,
+                        event=event) ~ cluster2 + Education + Income + EDAD,
+                   data=subset(link.may_F))
+
+Cox.CFP.f
+
+
+
+
+
+
+# BIGGER CLUSTERS
+
+# males
+Cox.CFP.e <- coxph(Surv(time=t.entrada,
+                        time2=t.salida,
+                        event=event) ~ cluster4 + Education + Income + EDAD,
+                   data=subset(link.may_M))
+
+summary(Cox.CFP.e)
+
+# females
+Cox.CFP.f <- coxph(Surv(time=t.entrada,
+                        time2=t.salida,
+                        event=event) ~ cluster3 + Education + Income + EDAD,
+                   data=subset(link.may_F))
+
+summary(Cox.CFP.f)
+
+
+
+
 # Just the transitions
 Cox.CFP.a <- coxph(Surv(time=EDAD,
                         time2=age.ex,

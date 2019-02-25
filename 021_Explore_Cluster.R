@@ -17,7 +17,8 @@ library(cluster)
 
 
 # --------------------------------------------
-load(file='010_mayor.link.RData')
+# load(file='010_mayor.link.RData')
+load(file='010_mayor50.link.RData')           ### !!! Change when different data set is used !!!
 # --------------------------------------------
 
 
@@ -25,7 +26,7 @@ load(file='010_mayor.link.RData')
 # 1.0. Select Population - Get rid of the "NC" cases for now and only extract the dependent ones
 # -----------------------------------------------------------------------------------------------
 
-link.may <- link.may %>% filter(LIMIT!="NC") %>% 
+link.may <- link.may50 %>% filter(LIMIT!="NC") %>% 
   ####
   ####
   #### AND at this point only extract the ones who are dependent in 2008
@@ -33,7 +34,8 @@ link.may <- link.may %>% filter(LIMIT!="NC") %>%
   filter(!is.na(Edadinicio_cuidado))   
 
 link.may <- data.table(link.may)
-# 4761 cases - working material
+
+
 
 # ---------------------------------------------
 # 1.1 Few discriptive plots on different states
@@ -45,12 +47,30 @@ link.may <- data.table(link.may)
 
 # Checks for Disability and Death
 # link.may %>% count(EDAD < age.ex)
-link.may %>% count(EdadInicioDisca44 < age.ex)
-link.may %>% count(round(EdadInicioDisca44,0) < round(EDAD,0))   ### THIS SHOULD NOT BE POSSIBLE
+# link.may$Edadinicio_disca44 <- as.numeric(link.may$Edadinicio_disca44)
+# link.may$age.ex <- as.numeric(link.may$age.ex)
+
+# link.may[,.N ,keyby=.(Good=(!is.na(EdadInicioDisca44) <= age.ex),  Bad= (!is.na(EdadInicioDisca44) > age.ex))]
+# 
+# link.may %>% count(EdadInicioDisca44 < age.ex)
+# link.may %>% count(round(EdadInicioDisca44,0) < round(EDAD,0))   ### THIS SHOULD NOT BE POSSIBLE
+# 
+# ## FIX (Listwise deletion)
+# 
+# link.may <- link.may %>% filter(round(EdadInicioDisca44,0) < round(EDAD,0))  # 215 cases
+
+
+# DISCA 13
+
+link.may$EdadInicioDisca13 <- as.numeric(link.may$EdadInicioDisca13)
+
+link.may %>% count(EdadInicioDisca13 < age.ex)
+link.may %>% count(round(EdadInicioDisca13,0) < round(EDAD,0))   ### THIS SHOULD NOT BE POSSIBLE
 
 ## FIX (Listwise deletion)
 
-link.may <- link.may %>% filter(round(EdadInicioDisca44,0) < round(EDAD,0))  # 215 cases
+link.may <- link.may %>% filter(round(EdadInicioDisca13,0) < round(EDAD,0))  
+# 133 cases in both (assuming they are the same)
 
 
 # 1.1.2 Age distribution (disability)
@@ -167,7 +187,7 @@ summary(abc)
   
   ## 3.1. Subdata set with information on Age, Entry to disability, A, B, C, and dependency
   ## ---------------------------------------------------------------------------------------
-  tra_may <- link.may %>% select(Id, SEXO, EDAD, EdadInicioDisca44, edadiniciodisca12A, edadiniciodisca12B, edadiniciodisca12C, Edadinicio_cuidado, age.ex)
+  tra_may <- link.may %>% select(Id, SEXO, EDAD, EdadInicioDisca44, EdadInicioDisca13, Edadinicio_cuidado, age.ex) # edadiniciodisca12A,
   
   
   ## 3.2. Define an alphabet for the different states an individual can obtain
@@ -242,7 +262,7 @@ summary(abc)
     
     # 1. start with the duration of disability free years after 50
       # Calculated as age after age 50 when first disability occurs - age 50 (= disability free duration after age 50)
-    mutate(dur_DF = ifelse(EdadInicioDisca44>=50,round(EdadInicioDisca44-50,0),0)) %>% 
+    mutate(dur_DF = ifelse(EdadInicioDisca13>=50,round(EdadInicioDisca13-50,0),0)) %>% 
     
     # 2. second state duration after onset of disability but before help or assistance is needed
     ### Important to remember is that independence does not necessarily mean that a diagnosed disability has occurred
@@ -250,9 +270,9 @@ summary(abc)
     # Calculated as: Age at when personal assistance is needed - Age at onset of disability/impairment OR if the age when first
     # personal assistance is requested was first, this age minus age 50, if they age of first assistance occured first, the independent time is 0
 
-    mutate(dur_ID = ifelse(Edadinicio_cuidado>=50 & Edadinicio_cuidado > EdadInicioDisca44, 
-                           round(((Edadinicio_cuidado - EdadInicioDisca44)-(50-EdadInicioDisca44)),0),
-                           ifelse(Edadinicio_cuidado>=50 & EdadInicioDisca44>=50 & Edadinicio_cuidado <= EdadInicioDisca44,round(Edadinicio_cuidado,0) - 50,0))) %>% 
+    mutate(dur_ID = ifelse(Edadinicio_cuidado>=50 & Edadinicio_cuidado > EdadInicioDisca13, 
+                           round(((Edadinicio_cuidado - EdadInicioDisca13)-(50-EdadInicioDisca13)),0),
+                           ifelse(Edadinicio_cuidado>=50 & EdadInicioDisca13>=50 & Edadinicio_cuidado <= EdadInicioDisca13,round(Edadinicio_cuidado,0) - 50,0))) %>% 
     
     # Little trick to avoid problems with cases where care taking occured before the diagnosis of disability
     mutate(dur_DF = ifelse(dur_DF>=dur_ID, 0, dur_DF)) %>%
@@ -270,60 +290,6 @@ summary(abc)
   # tra_may <- tra_may %>% mutate(disstring = paste(rep("DF", dur_DF), rep("ID", dur_ID), rep("DC", dur_DC), rep("C", dur_C), collapse = "-"))
   # Doesn´t work because of invalid time argument
   
-### Kindergarten dataframe approach (One Variable for EACH time point) - copy and paste work
-tra_may <- tra_may %>% mutate("50" = ifelse(EdadInicioDisca44>=50, "DF", ifelse(Edadinicio_cuidado>=50, "ID", ifelse(EDAD>=50,"DC", "C")))) %>% 
-  mutate("51" = ifelse(EdadInicioDisca44>=51, "DF", ifelse(Edadinicio_cuidado>=51, "ID", ifelse(EDAD>=51,"DC", "C")))) %>% 
-  mutate("52" = ifelse(EdadInicioDisca44>=52, "DF", ifelse(Edadinicio_cuidado>=52, "ID", ifelse(EDAD>=52,"DC", "C")))) %>% 
-  mutate("53" = ifelse(EdadInicioDisca44>=53, "DF", ifelse(Edadinicio_cuidado>=53, "ID", ifelse(EDAD>=53,"DC", "C")))) %>% 
-  mutate("54" = ifelse(EdadInicioDisca44>=54, "DF", ifelse(Edadinicio_cuidado>=54, "ID", ifelse(EDAD>=54,"DC", "C")))) %>% 
-  mutate("55" = ifelse(EdadInicioDisca44>=55, "DF", ifelse(Edadinicio_cuidado>=55, "ID", ifelse(EDAD>=55,"DC", "C")))) %>% 
-  mutate("56" = ifelse(EdadInicioDisca44>=56, "DF", ifelse(Edadinicio_cuidado>=56, "ID", ifelse(EDAD>=56,"DC", "C")))) %>% 
-  mutate("57" = ifelse(EdadInicioDisca44>=57, "DF", ifelse(Edadinicio_cuidado>=57, "ID", ifelse(EDAD>=57,"DC", "C")))) %>% 
-  mutate("58" = ifelse(EdadInicioDisca44>=58, "DF", ifelse(Edadinicio_cuidado>=58, "ID", ifelse(EDAD>=58,"DC", "C")))) %>% 
-  mutate("59" = ifelse(EdadInicioDisca44>=59, "DF", ifelse(Edadinicio_cuidado>=59, "ID", ifelse(EDAD>=59,"DC", "C")))) %>% 
-  mutate("60" = ifelse(EdadInicioDisca44>=60, "DF", ifelse(Edadinicio_cuidado>=60, "ID", ifelse(EDAD>=60,"DC", "C")))) %>% 
-  mutate("61" = ifelse(EdadInicioDisca44>=61, "DF", ifelse(Edadinicio_cuidado>=61, "ID", ifelse(EDAD>=61,"DC", "C")))) %>% 
-  mutate("62" = ifelse(EdadInicioDisca44>=62, "DF", ifelse(Edadinicio_cuidado>=62, "ID", ifelse(EDAD>=62,"DC", "C")))) %>% 
-  mutate("63" = ifelse(EdadInicioDisca44>=63, "DF", ifelse(Edadinicio_cuidado>=63, "ID", ifelse(EDAD>=63,"DC", "C")))) %>% 
-  mutate("64" = ifelse(EdadInicioDisca44>=64, "DF", ifelse(Edadinicio_cuidado>=64, "ID", ifelse(EDAD>=64,"DC", "C")))) %>% 
-  mutate("65" = ifelse(EdadInicioDisca44>=65, "DF", ifelse(Edadinicio_cuidado>=65, "ID", ifelse(EDAD>=65,"DC", "C")))) %>% 
-  mutate("66" = ifelse(EdadInicioDisca44>=66, "DF", ifelse(Edadinicio_cuidado>=66, "ID", ifelse(EDAD>=66,"DC", "C")))) %>% 
-  mutate("67" = ifelse(EdadInicioDisca44>=67, "DF", ifelse(Edadinicio_cuidado>=67, "ID", ifelse(EDAD>=67,"DC", "C")))) %>% 
-  mutate("68" = ifelse(EdadInicioDisca44>=68, "DF", ifelse(Edadinicio_cuidado>=68, "ID", ifelse(EDAD>=68,"DC", "C")))) %>% 
-  mutate("69" = ifelse(EdadInicioDisca44>=69, "DF", ifelse(Edadinicio_cuidado>=69, "ID", ifelse(EDAD>=69,"DC", "C")))) %>% 
-  mutate("70" = ifelse(EdadInicioDisca44>=70, "DF", ifelse(Edadinicio_cuidado>=70, "ID", ifelse(EDAD>=70,"DC", "C")))) %>% 
-  mutate("71" = ifelse(EdadInicioDisca44>=71, "DF", ifelse(Edadinicio_cuidado>=71, "ID", ifelse(EDAD>=71,"DC", "C")))) %>% 
-  mutate("72" = ifelse(EdadInicioDisca44>=72, "DF", ifelse(Edadinicio_cuidado>=72, "ID", ifelse(EDAD>=72,"DC", "C")))) %>% 
-  mutate("73" = ifelse(EdadInicioDisca44>=73, "DF", ifelse(Edadinicio_cuidado>=73, "ID", ifelse(EDAD>=73,"DC", "C")))) %>% 
-  mutate("74" = ifelse(EdadInicioDisca44>=74, "DF", ifelse(Edadinicio_cuidado>=74, "ID", ifelse(EDAD>=74,"DC", "C")))) %>% 
-  mutate("75" = ifelse(EdadInicioDisca44>=75, "DF", ifelse(Edadinicio_cuidado>=75, "ID", ifelse(EDAD>=75,"DC", "C")))) %>% 
-  mutate("76" = ifelse(EdadInicioDisca44>=76, "DF", ifelse(Edadinicio_cuidado>=76, "ID", ifelse(EDAD>=76,"DC", "C")))) %>% 
-  mutate("77" = ifelse(EdadInicioDisca44>=77, "DF", ifelse(Edadinicio_cuidado>=77, "ID", ifelse(EDAD>=77,"DC", "C")))) %>% 
-  mutate("78" = ifelse(EdadInicioDisca44>=78, "DF", ifelse(Edadinicio_cuidado>=78, "ID", ifelse(EDAD>=78,"DC", "C")))) %>% 
-  mutate("79" = ifelse(EdadInicioDisca44>=79, "DF", ifelse(Edadinicio_cuidado>=79, "ID", ifelse(EDAD>=79,"DC", "C")))) %>% 
-  mutate("80" = ifelse(EdadInicioDisca44>=80, "DF", ifelse(Edadinicio_cuidado>=80, "ID", ifelse(EDAD>=80,"DC", "C")))) %>% 
-  mutate("81" = ifelse(EdadInicioDisca44>=81, "DF", ifelse(Edadinicio_cuidado>=81, "ID", ifelse(EDAD>=81,"DC", "C")))) %>% 
-  mutate("82" = ifelse(EdadInicioDisca44>=82, "DF", ifelse(Edadinicio_cuidado>=82, "ID", ifelse(EDAD>=82,"DC", "C")))) %>% 
-  mutate("83" = ifelse(EdadInicioDisca44>=83, "DF", ifelse(Edadinicio_cuidado>=83, "ID", ifelse(EDAD>=83,"DC", "C")))) %>% 
-  mutate("84" = ifelse(EdadInicioDisca44>=84, "DF", ifelse(Edadinicio_cuidado>=84, "ID", ifelse(EDAD>=84,"DC", "C")))) %>% 
-  mutate("85" = ifelse(EdadInicioDisca44>=85, "DF", ifelse(Edadinicio_cuidado>=85, "ID", ifelse(EDAD>=85,"DC", "C")))) %>% 
-  mutate("86" = ifelse(EdadInicioDisca44>=86, "DF", ifelse(Edadinicio_cuidado>=86, "ID", ifelse(EDAD>=86,"DC", "C")))) %>% 
-  mutate("87" = ifelse(EdadInicioDisca44>=87, "DF", ifelse(Edadinicio_cuidado>=87, "ID", ifelse(EDAD>=87,"DC", "C")))) %>% 
-  mutate("88" = ifelse(EdadInicioDisca44>=88, "DF", ifelse(Edadinicio_cuidado>=88, "ID", ifelse(EDAD>=88,"DC", "C")))) %>% 
-  mutate("89" = ifelse(EdadInicioDisca44>=89, "DF", ifelse(Edadinicio_cuidado>=89, "ID", ifelse(EDAD>=89,"DC", "C")))) %>% 
-  mutate("90" = ifelse(EdadInicioDisca44>=90, "DF", ifelse(Edadinicio_cuidado>=90, "ID", ifelse(EDAD>=90,"DC", "C")))) %>% 
-  mutate("91" = ifelse(EdadInicioDisca44>=91, "DF", ifelse(Edadinicio_cuidado>=91, "ID", ifelse(EDAD>=91,"DC", "C")))) %>% 
-  mutate("92" = ifelse(EdadInicioDisca44>=92, "DF", ifelse(Edadinicio_cuidado>=92, "ID", ifelse(EDAD>=92,"DC", "C")))) %>% 
-  mutate("93" = ifelse(EdadInicioDisca44>=93, "DF", ifelse(Edadinicio_cuidado>=93, "ID", ifelse(EDAD>=93,"DC", "C")))) %>% 
-  mutate("94" = ifelse(EdadInicioDisca44>=94, "DF", ifelse(Edadinicio_cuidado>=94, "ID", ifelse(EDAD>=94,"DC", "C")))) %>% 
-  mutate("95" = ifelse(EdadInicioDisca44>=95, "DF", ifelse(Edadinicio_cuidado>=95, "ID", ifelse(EDAD>=95,"DC", "C")))) %>% 
-  mutate("96" = ifelse(EdadInicioDisca44>=96, "DF", ifelse(Edadinicio_cuidado>=96, "ID", ifelse(EDAD>=96,"DC", "C")))) %>% 
-  mutate("97" = ifelse(EdadInicioDisca44>=97, "DF", ifelse(Edadinicio_cuidado>=97, "ID", ifelse(EDAD>=97,"DC", "C")))) %>% 
-  mutate("98" = ifelse(EdadInicioDisca44>=98, "DF", ifelse(Edadinicio_cuidado>=98, "ID", ifelse(EDAD>=98,"DC", "C")))) %>% 
-  mutate("99" = ifelse(EdadInicioDisca44>=99, "DF", ifelse(Edadinicio_cuidado>=99, "ID", ifelse(EDAD>=99,"DC", "C")))) %>% 
-  mutate("100" = ifelse(EdadInicioDisca44>=100, "DF", ifelse(Edadinicio_cuidado>=100, "ID", ifelse(EDAD>=100,"DC", "C"))))
-
-
 ### Kindergarten dataframe approach (One Variable for EACH time point) - copy and paste work
 tra_may_C <- tra_may %>% mutate("50" = ifelse(EdadInicioDisca44>=50, "DF", ifelse(Edadinicio_cuidado>=50, "ID", ifelse(EDAD>=50,"DC", NA)))) %>% 
   mutate("51" = ifelse(EdadInicioDisca44>=51, "DF", ifelse(Edadinicio_cuidado>=51, "ID", ifelse(EDAD>=51,"DC", NA)))) %>% 
@@ -378,6 +344,61 @@ tra_may_C <- tra_may %>% mutate("50" = ifelse(EdadInicioDisca44>=50, "DF", ifels
   mutate("100" = ifelse(EdadInicioDisca44>=100, "DF", ifelse(Edadinicio_cuidado>=100, "ID", ifelse(EDAD>=100,"DC", NA))))
   
 
+
+### Kindergarten dataframe approach (One Variable for EACH time point)
+
+### DISCA13
+tra_may_13 <- tra_may %>% mutate("50" = ifelse(EdadInicioDisca13>=50, "DF", ifelse(Edadinicio_cuidado>=50, "ID", ifelse(EDAD>=50,"DC", NA)))) %>% 
+  mutate("51" = ifelse(EdadInicioDisca13>=51, "DF", ifelse(Edadinicio_cuidado>=51, "ID", ifelse(EDAD>=51,"DC", NA)))) %>% 
+  mutate("52" = ifelse(EdadInicioDisca13>=52, "DF", ifelse(Edadinicio_cuidado>=52, "ID", ifelse(EDAD>=52,"DC", NA)))) %>% 
+  mutate("53" = ifelse(EdadInicioDisca13>=53, "DF", ifelse(Edadinicio_cuidado>=53, "ID", ifelse(EDAD>=53,"DC", NA)))) %>% 
+  mutate("54" = ifelse(EdadInicioDisca13>=54, "DF", ifelse(Edadinicio_cuidado>=54, "ID", ifelse(EDAD>=54,"DC", NA)))) %>% 
+  mutate("55" = ifelse(EdadInicioDisca13>=55, "DF", ifelse(Edadinicio_cuidado>=55, "ID", ifelse(EDAD>=55,"DC", NA)))) %>% 
+  mutate("56" = ifelse(EdadInicioDisca13>=56, "DF", ifelse(Edadinicio_cuidado>=56, "ID", ifelse(EDAD>=56,"DC", NA)))) %>% 
+  mutate("57" = ifelse(EdadInicioDisca13>=57, "DF", ifelse(Edadinicio_cuidado>=57, "ID", ifelse(EDAD>=57,"DC", NA)))) %>% 
+  mutate("58" = ifelse(EdadInicioDisca13>=58, "DF", ifelse(Edadinicio_cuidado>=58, "ID", ifelse(EDAD>=58,"DC", NA)))) %>% 
+  mutate("59" = ifelse(EdadInicioDisca13>=59, "DF", ifelse(Edadinicio_cuidado>=59, "ID", ifelse(EDAD>=59,"DC", NA)))) %>% 
+  mutate("60" = ifelse(EdadInicioDisca13>=60, "DF", ifelse(Edadinicio_cuidado>=60, "ID", ifelse(EDAD>=60,"DC", NA)))) %>% 
+  mutate("61" = ifelse(EdadInicioDisca13>=61, "DF", ifelse(Edadinicio_cuidado>=61, "ID", ifelse(EDAD>=61,"DC", NA)))) %>% 
+  mutate("62" = ifelse(EdadInicioDisca13>=62, "DF", ifelse(Edadinicio_cuidado>=62, "ID", ifelse(EDAD>=62,"DC", NA)))) %>% 
+  mutate("63" = ifelse(EdadInicioDisca13>=63, "DF", ifelse(Edadinicio_cuidado>=63, "ID", ifelse(EDAD>=63,"DC", NA)))) %>% 
+  mutate("64" = ifelse(EdadInicioDisca13>=64, "DF", ifelse(Edadinicio_cuidado>=64, "ID", ifelse(EDAD>=64,"DC", NA)))) %>% 
+  mutate("65" = ifelse(EdadInicioDisca13>=65, "DF", ifelse(Edadinicio_cuidado>=65, "ID", ifelse(EDAD>=65,"DC", NA)))) %>% 
+  mutate("66" = ifelse(EdadInicioDisca13>=66, "DF", ifelse(Edadinicio_cuidado>=66, "ID", ifelse(EDAD>=66,"DC", NA)))) %>% 
+  mutate("67" = ifelse(EdadInicioDisca13>=67, "DF", ifelse(Edadinicio_cuidado>=67, "ID", ifelse(EDAD>=67,"DC", NA)))) %>% 
+  mutate("68" = ifelse(EdadInicioDisca13>=68, "DF", ifelse(Edadinicio_cuidado>=68, "ID", ifelse(EDAD>=68,"DC", NA)))) %>% 
+  mutate("69" = ifelse(EdadInicioDisca13>=69, "DF", ifelse(Edadinicio_cuidado>=69, "ID", ifelse(EDAD>=69,"DC", NA)))) %>% 
+  mutate("70" = ifelse(EdadInicioDisca13>=70, "DF", ifelse(Edadinicio_cuidado>=70, "ID", ifelse(EDAD>=70,"DC", NA)))) %>% 
+  mutate("71" = ifelse(EdadInicioDisca13>=71, "DF", ifelse(Edadinicio_cuidado>=71, "ID", ifelse(EDAD>=71,"DC", NA)))) %>% 
+  mutate("72" = ifelse(EdadInicioDisca13>=72, "DF", ifelse(Edadinicio_cuidado>=72, "ID", ifelse(EDAD>=72,"DC", NA)))) %>% 
+  mutate("73" = ifelse(EdadInicioDisca13>=73, "DF", ifelse(Edadinicio_cuidado>=73, "ID", ifelse(EDAD>=73,"DC", NA)))) %>% 
+  mutate("74" = ifelse(EdadInicioDisca13>=74, "DF", ifelse(Edadinicio_cuidado>=74, "ID", ifelse(EDAD>=74,"DC", NA)))) %>% 
+  mutate("75" = ifelse(EdadInicioDisca13>=75, "DF", ifelse(Edadinicio_cuidado>=75, "ID", ifelse(EDAD>=75,"DC", NA)))) %>% 
+  mutate("76" = ifelse(EdadInicioDisca13>=76, "DF", ifelse(Edadinicio_cuidado>=76, "ID", ifelse(EDAD>=76,"DC", NA)))) %>% 
+  mutate("77" = ifelse(EdadInicioDisca13>=77, "DF", ifelse(Edadinicio_cuidado>=77, "ID", ifelse(EDAD>=77,"DC", NA)))) %>% 
+  mutate("78" = ifelse(EdadInicioDisca13>=78, "DF", ifelse(Edadinicio_cuidado>=78, "ID", ifelse(EDAD>=78,"DC", NA)))) %>% 
+  mutate("79" = ifelse(EdadInicioDisca13>=79, "DF", ifelse(Edadinicio_cuidado>=79, "ID", ifelse(EDAD>=79,"DC", NA)))) %>% 
+  mutate("80" = ifelse(EdadInicioDisca13>=80, "DF", ifelse(Edadinicio_cuidado>=80, "ID", ifelse(EDAD>=80,"DC", NA)))) %>% 
+  mutate("81" = ifelse(EdadInicioDisca13>=81, "DF", ifelse(Edadinicio_cuidado>=81, "ID", ifelse(EDAD>=81,"DC", NA)))) %>% 
+  mutate("82" = ifelse(EdadInicioDisca13>=82, "DF", ifelse(Edadinicio_cuidado>=82, "ID", ifelse(EDAD>=82,"DC", NA)))) %>% 
+  mutate("83" = ifelse(EdadInicioDisca13>=83, "DF", ifelse(Edadinicio_cuidado>=83, "ID", ifelse(EDAD>=83,"DC", NA)))) %>% 
+  mutate("84" = ifelse(EdadInicioDisca13>=84, "DF", ifelse(Edadinicio_cuidado>=84, "ID", ifelse(EDAD>=84,"DC", NA)))) %>% 
+  mutate("85" = ifelse(EdadInicioDisca13>=85, "DF", ifelse(Edadinicio_cuidado>=85, "ID", ifelse(EDAD>=85,"DC", NA)))) %>% 
+  mutate("86" = ifelse(EdadInicioDisca13>=86, "DF", ifelse(Edadinicio_cuidado>=86, "ID", ifelse(EDAD>=86,"DC", NA)))) %>% 
+  mutate("87" = ifelse(EdadInicioDisca13>=87, "DF", ifelse(Edadinicio_cuidado>=87, "ID", ifelse(EDAD>=87,"DC", NA)))) %>% 
+  mutate("88" = ifelse(EdadInicioDisca13>=88, "DF", ifelse(Edadinicio_cuidado>=88, "ID", ifelse(EDAD>=88,"DC", NA)))) %>% 
+  mutate("89" = ifelse(EdadInicioDisca13>=89, "DF", ifelse(Edadinicio_cuidado>=89, "ID", ifelse(EDAD>=89,"DC", NA)))) %>% 
+  mutate("90" = ifelse(EdadInicioDisca13>=90, "DF", ifelse(Edadinicio_cuidado>=90, "ID", ifelse(EDAD>=90,"DC", NA)))) %>% 
+  mutate("91" = ifelse(EdadInicioDisca13>=91, "DF", ifelse(Edadinicio_cuidado>=91, "ID", ifelse(EDAD>=91,"DC", NA)))) %>% 
+  mutate("92" = ifelse(EdadInicioDisca13>=92, "DF", ifelse(Edadinicio_cuidado>=92, "ID", ifelse(EDAD>=92,"DC", NA)))) %>% 
+  mutate("93" = ifelse(EdadInicioDisca13>=93, "DF", ifelse(Edadinicio_cuidado>=93, "ID", ifelse(EDAD>=93,"DC", NA)))) %>% 
+  mutate("94" = ifelse(EdadInicioDisca13>=94, "DF", ifelse(Edadinicio_cuidado>=94, "ID", ifelse(EDAD>=94,"DC", NA)))) %>% 
+  mutate("95" = ifelse(EdadInicioDisca13>=95, "DF", ifelse(Edadinicio_cuidado>=95, "ID", ifelse(EDAD>=95,"DC", NA)))) %>% 
+  mutate("96" = ifelse(EdadInicioDisca13>=96, "DF", ifelse(Edadinicio_cuidado>=96, "ID", ifelse(EDAD>=96,"DC", NA)))) %>% 
+  mutate("97" = ifelse(EdadInicioDisca13>=97, "DF", ifelse(Edadinicio_cuidado>=97, "ID", ifelse(EDAD>=97,"DC", NA)))) %>% 
+  mutate("98" = ifelse(EdadInicioDisca13>=98, "DF", ifelse(Edadinicio_cuidado>=98, "ID", ifelse(EDAD>=98,"DC", NA)))) %>% 
+  mutate("99" = ifelse(EdadInicioDisca13>=99, "DF", ifelse(Edadinicio_cuidado>=99, "ID", ifelse(EDAD>=99,"DC", NA)))) %>% 
+  mutate("100" = ifelse(EdadInicioDisca13>=100, "DF", ifelse(Edadinicio_cuidado>=100, "ID", ifelse(EDAD>=100,"DC", NA))))
 
 ### Kindergarten dataframe approach (One Variable for EACH time point) - copy and paste work
 ### %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% ###
@@ -445,6 +466,7 @@ tra_may_12A <- tra_may_12A %>%
 
 # save(tra_may, file='datasets/020_traMay.RData')
 # save(tra_may_C, file='datasets/020_traMay_C.RData')
+# save(tra_may_13, file='datasets/020_traMay_13.RData')
 # save(tra_may_12A, file='datasets/020_traMay_12A.RData')
 
 #### ---------------------------------------------------------------------------------------------------------------- ####
@@ -563,494 +585,3 @@ tra_may_12A <- tra_may_12A %>%
 #                                                            ifelse(edadiniciodisca12A>=99, "ADL", ifelse(EDAD>=99,"DC", "C"))))) %>% 
 #   mutate("100" = ifelse(EdadInicioDisca44>=100, "DF", ifelse(Edadinicio_cuidado>=100, "ID", 
 #                                                              ifelse(edadiniciodisca12A>=100, "ADL", ifelse(EDAD>=100,"DC", "C")))))
-
-#### ---------------------------------------------------------------------------------------------------------------- ####
-#### ---------------------------------------------------------------------------------------------------------------- ####
-#### ---------------------------------------------------------------------------------------------------------------- ####
-
-
-##########################################################################################################################
-##########################################################################################################################
-##################################### Explore State Sequences by Sex
-##########################################################################################################################
-##########################################################################################################################
-
-
-### Step 1 - Create separate datasets for men and women (literature: different timings and disability occurrences)
-
-tra_may_M <- tra_may %>% filter(SEXO=="Varón") %>% mutate(SEXO="Male")
-
-tra_may_F <- tra_may %>% filter(SEXO=="Mujer") %>% mutate(SEXO="Female")
-
-
-### Create a matrix for the sequence analysis
-### -----------------------------------------
-
-seqmat_M <- tra_may_M[,c(14:64)]
-
-seqmat_F <- tra_may_F[,c(14:64)]
-
- ### seqdef to create an object for TraMineR
- ### ---------------------------------------
-
-?seqdef
-
-# Male
-DisSeq_M <- seqdef(seqmat_M,informat = "STS", alphabet = SeqAlphab_2, id="auto", cpal =  Brewer_2 ,start = 55, 
-                 labels = c("Disability Free","Idependent","Care","Censored"))
-
-summary(DisSeq_M) # 1495 cases
-
-# Females
-DisSeq_F <- seqdef(seqmat_F,informat = "STS", alphabet = SeqAlphab_2, id="auto", cpal =  Brewer_2 ,start = 55, 
-                   labels = c("Disability Free","Idependent","Care","Censored"))
-
-summary(DisSeq_F) # 3266 cases
-
-
-###################################################################################################
-
-### Plotting the sequences
-?seqplot
-
-# Sequence Examples
-par(mfrow=c(1,2))
-seqplot(DisSeq_M,type = "i", with.legend = FALSE)
-seqplot(DisSeq_F,type = "i", with.legend = FALSE)
-# seqlegend(DisSeq_M)
-
-# # Ordered Sequences by sex (?) for analysis with both sexes
-# par(mfrow=c(1,2))
-# seqplot(DisSeq, type = "I",group = tra_may$SEXO, with.legend = FALSE, sort="from.end")
-
-# sorted sequences for both sexes
-par(mfrow=c(1,2))
-seqplot(DisSeq_M,type = "I", with.legend = FALSE, sort="from.end")
-seqplot(DisSeq_F,type = "I", with.legend = FALSE, sort="from.end")
-
-
-
-### d- plot - cummulated state plot
-par(mfrow=c(1,3))
-seqdplot(DisSeq_M, with.legend = FALSE)
-seqdplot(DisSeq_F, with.legend = FALSE)
-seqlegend(DisSeq_M)
-
-# Without legend
-# par(mfrow=c(1,2))
-# seqplot(DisSeq,type = "i", with.legend = FALSE)
-# seqdplot(DisSeq, with.legend = FALSE)
-# par(mfrow=c(1,1))
-
-##################################################################################
-# Without legend groups (sexes)
-# par(mfrow=c(2,2))
-# seqplot(DisSeq,type = "i", group = tra_may$SEXO, with.legend = FALSE)
-# seqdplot(DisSeq,group = tra_may$SEXO, with.legend = FALSE)
-# par(mfrow=c(1,1))
-##################################################################################
-
-### f- plot - cummulated frequencies of sequences
-seqfplot(DisSeq_M)
-seqfplot(DisSeq_F)
-
-### ----------------------------------------------------------------
-### state distribution table as numerical counterpart for the d-plot
-
-seqstatd(DisSeq_M)
-seqstatd(DisSeq_F)
-
-### Total numbers ####################
-#      50   51   52   53     54   55    56    57    58    59    60    61    62   63   64   65    66    67    68    69    70
-# DF 0.83 0.82 0.82 0.81 0.7847 0.78 0.768 0.754 0.745 0.742 0.680 0.672 0.653 0.64 0.62 0.58 0.562 0.543 0.520 0.501 0.498
-# ID 0.17 0.18 0.18 0.19 0.2094 0.21 0.216 0.221 0.223 0.215 0.266 0.260 0.264 0.26 0.26 0.28 0.267 0.261 0.255 0.246 0.221
-# DC 0.00 0.00 0.00 0.00 0.0059 0.01 0.016 0.024 0.032 0.043 0.054 0.068 0.083 0.10 0.12 0.14 0.151 0.163 0.171 0.184 0.195
-# C  0.00 0.00 0.00 0.00 0.0000 0.00 0.000 0.000 0.000 0.000 0.000 0.000 0.000 0.00 0.00 0.00 0.019 0.034 0.054 0.069 0.086
-######################################
-
-### --------------------
-### Sequence Frequencies
-
-seqtab(DisSeq)
-
-#############################################
-# Just the most common frequencies
-
-                  # Freq Percent
-# DF/51              87    1.83
-# ID/9-DC/12-C/30    31    0.65
-# ID/4-DC/12-C/35    28    0.59
-# ID/10-DC/12-C/29   25    0.53
-# ID/18-DC/12-C/21   23    0.48
-# ID/7-DC/12-C/32    23    0.48
-# ID/11-DC/12-C/28   22    0.46
-# ID/12-DC/12-C/27   22    0.46
-# ID/14-DC/12-C/25   22    0.46
-# ID/15-DC/12-C/24   22    0.46
-#############################################
-
-# male
-seqtab(DisSeq_M)
-
-# female
-seqtab(DisSeq_F)
-
-
-### --------------------
-### Distinct state - DSS
-seqdss(head(DisSeq))
-
-# male
-seqdss(head(DisSeq_M))
-
-
-### -----------------------------
-### Distinct state Duration - DSS
-seqdur(head(DisSeq))
-
-# female
-seqdur(head(DisSeq_F))
-
-
-### ------------------------
-### Sequence duration state 
-seqistatd(DisSeq[1:6,])
-
-### ----------------
-### Transition Rate !
-### ----------------
-
-seqtrate(DisSeq)
-round(seqtrate(DisSeq),2)
-
-# males
-round(seqtrate(DisSeq_M),2)
-
-# females
-round(seqtrate(DisSeq_F),2)
-
-
-############ COMPLEXITY MEASURES ##############
-###############################################
-
-### ----------------
-### Shannon Entropy
-seqient(head(DisSeq))
-
-# males
-seqient(head(DisSeq_M))
-
-# females
-seqient(head(DisSeq_F))  # lower values for femals (due to higher case number?)
-
-### ----------
-### Turbulence
-par(mfrow=c(1,1))
-hist(seqST(DisSeq))
-
-par(mfrow=c(1,2))
-# males
-hist(seqST(DisSeq_M))
-# females
-hist(seqST(DisSeq_F))
-
-
-
-###################################################################################################################
-############################################## Clustering #########################################################
-
-# For the analysis of clusters, the optimal distance matrix is required
-
-# 1. Generating a substitutions cost matrix (read!) from the sequence object (in our case "DisSeq")
-# -------------------------------------------------------------------------------------------------
-
-submat <- seqsubm(DisSeq, method = "CONSTANT", cval = 2)
-
-  #       DF-> ID-> DC-> C->
-  # DF->    0    2    2   2
-  # ID->    2    0    2   2
-  # DC->    2    2    0   2
-  # C->     2    2    2   0
-
-# males
-submat_M <- seqsubm(DisSeq_M, method = "CONSTANT", cval = 2)
-
-# females
-submat_F <- seqsubm(DisSeq_F, method = "CONSTANT", cval = 2)
-
-# 1b. Computing distances using the matrix and the default indel cost of 1 ("seqdist" command)
-# --------------------------------------------------------------------------------------------
-
-      # matrix will be filled in under option "sm"
-      # This large matrix gives us the calculated optimal distance between two individuals
-
-      # The mathematical process is called "optimal matching" (read Halpin 2010!)
-
-dismat <- seqdist(DisSeq, method = "OM", sm = submat)
-dismat[1:10,1:10]
-
-# example - optimal distance between individual 4 and 5 (result: it´d take 48 operations to make both sequences the same)
-dismat[4,5]
-
-
-# males (OM)
-dismat_M <- seqdist(DisSeq_M, method = "OM", sm = submat_M)
-dismat_M[1:10,1:10]
-# males (OMslen - spell-length sensitive)
-dismat_M2 <- seqdist(DisSeq_M, method = "OMslen", sm = submat_M)
-dismat_M2[1:10,1:10]
-
-# females
-dismat_F <- seqdist(DisSeq_F, method = "OM", sm = submat_F)
-dismat_F[1:10,1:10]
-
-# 2. Build the clusters with the agnes function (cluster package)
-# ---------------------------------------------------------------
-
-?agnes
-# command provides computes a agglomorative hieracrchical clustering
-# option "ward" refers to the Ward´s method! - Other option "weigthed" which uses weighted averages
-
-clusterw <- agnes(dismat, diss = TRUE, method = "ward")
-
-# Plotting a dendrogram (if possible)
-plot(clusterw, which.plots = 2)
-
-
-# 3. Try to cluster sequences in 3 groups (Adjustable)
-# ----------------------------------------------------
-
-# cutree command (3 groups)
-cluster3 <- cutree(clusterw, k = 4)
-
-# Create three factors for grouping (for now without descriptive name)
-cluster3 <- factor(cluster3, labels = c("Type 1", "Type 2", "Type 3"))
-table(cluster3)
-
-# Output
-  # Type 1 Type 2 Type 3 
-  # 1582   1815   1364 
-## ---------------------------------------------------------- ##
-## for males only
-clusterw_M <- agnes(dismat_M, diss = TRUE, method = "ward")
-clusterw_M2 <- agnes(dismat_M2, diss = TRUE, method = "ward")
-plot(clusterw_M2, which.plots = 2)
-
-cluster3_M <- cutree(clusterw_M, k = 3)
-cluster3_M2 <- cutree(clusterw_M2, k = 2)
-
-cluster4_M <- cutree(clusterw_M, k = 4)
-cluster4_M2 <- cutree(clusterw_M2, k = 4)
-cluster5_M2 <- cutree(clusterw_M2, k = 5)
-
-
-cluster3_M <- factor(cluster3_M, labels = c("Type 1", "Type 2", "Type 3"))
-cluster3_M2 <- factor(cluster3_M2, labels = c("Type 1", "Type 2", "Type 3"))
-table(cluster3_M)
-
-cluster4_M <- factor(cluster4_M, labels = c("Type 1", "Type 2", "Type 3", "Type 4"))
-cluster4_M2 <- factor(cluster4_M2, labels = c("Type 1", "Type 2", "Type 3", "Type 4"))
-cluster5_M2 <- factor(cluster5_M2, labels = c("Type 1", "Type 2", "Type 3", "Type 4","Type 5"))
-
-table(cluster4_M)
-table(cluster4_M2)
-table(cluster5_M2)
-
-## ---------------------------------------------------------- ##
-## for females only
-clusterw_F <- agnes(dismat_F, diss = TRUE, method = "ward")
-cluster3_F <- cutree(clusterw_F, k = 3)
-cluster4_F <- cutree(clusterw_F, k = 5)
-
-cluster3_F <- factor(cluster3_F, labels = c("Type 1", "Type 2", "Type 3"))
-table(cluster3_F)
-
-# 5 groups seems to be the ideal cluster
-cluster5_F <- factor(cluster4_F, labels = c("Type 1", "Type 2", "Type 3", "Type 4","Type 5"))
-table(cluster5_F)
-
-## ---------------------------------------------------------- ##
-# Now plotting for visual examination
-
-seqfplot(DisSeq, group = cluster3, pbarw = T)
-
-# males 3 cats
-seqfplot(DisSeq_M, group = cluster3_M, pbarw = T)
-seqfplot(DisSeq_M, group = cluster3_M2, pbarw = T)
-
-# males 4/5 cats
-seqfplot(DisSeq_M, group = cluster4_M, pbarw = T)
-seqfplot(DisSeq_M, group = cluster4_M2, pbarw = T)
-seqfplot(DisSeq_M, group = cluster5_M2, pbarw = T)
-
-# females 3 cats
-seqfplot(DisSeq_F, group = cluster3_F, pbarw = T)
-
-# females 4 cats
-seqfplot(DisSeq_F, group = cluster4_F, pbarw = T)
-
-# Second plot - mean time spent in each state by cluster
-
-seqmtplot(DisSeq, group = cluster3)
-
-# 4. Try to cluster sequences in 2 groups (Adjustable)
-# ----------------------------------------------------
-
-# cutree command (2 groups)
-cluster2 <- cutree(clusterw, k = 2)
-
-# Create three factors for grouping (for now without descriptive name)
-cluster2 <- factor(cluster2, labels = c("Type 1", "Type 2"))
-table(cluster2)
-
-# Output
-# Type 1 Type 2 Type 3 
-# 1582   1815   1364 
-
-# Now plotting for visual examination
-seqdplot(DisSeq, group = cluster2, border=NA)
-
-seqfplot(DisSeq, group = cluster2, border=NA)
-
-# Second plot - mean time spent in each state by cluster
-
-seqmtplot(DisSeq, group = cluster2)
-
-
-
-
-
-
-
-
-
-
-
-
-
-######### Group Differences = Gender differences
-################################################
-
-## vector (T/F) for the being male or not in the length of the dataframe (row number)
-
-filter.men <- which(rs2$sex=="male")
-## we use this vector to extract the males from the data set
-men.sts <- RetSeq[filter.men,]
-
-
-## and do the same for the females
-filter.women <- which(rs2$sex=="female")
-women.sts <- RetSeq[filter.women,]
-
-### See difference in turbulence
-
-turb.men <- seqST(men.sts)
-
-turb.women <- seqST(women.sts)
-
-boxplot(turb.men,ylim=c(0,15))
-boxplot(turb.women,ylim=c(0,15)) 
-
-
-
-#######################################################################################################################
-#######################################################################################################################
-#######################################################################################################################
-#######################################################################################################################
-#######################################################################################################################
-#######################################################################################################################
-
-
-### -----------------------------------------
-### Create a matrix for the sequence analysis
-### -----------------------------------------
-
-seqmat <- tra_may_ADL[,c(14:64)]
-
-
-### seqdef to create an object for TraMineR
-### ---------------------------------------
-
-?seqdef
-
-DisSeq <- seqdef(seqmat,informat = "STS", alphabet = SeqAlphab_1, id="auto", cpal =  Brewer_1 ,start = 55, 
-                 labels = c("Disability Free","Idependent","ADL","Care","Censored"))
-
-summary(DisSeq)
-
-
-
-
-
-
-
-
-      # ### Matrix Approach (Problem: Operation of binding the vectors and )
-      #   
-      #   for(i in min(tra_test$Id):max(tra_test$Id)){
-      #     
-      #     B = matrix( 
-      #       c(rep("DF", tra_test$dur_DF[tra_test$Id==i]),rep("ID", tra_test$dur_ID[tra_test$Id==i]),
-      #         rep("DC", tra_test$dur_DC[tra_test$Id==i]), rep("C",tra_test$dur_C[tra_test$Id==i])), 
-      #       nrow=length(tra_test$Id), 
-      #       ncol=50, byrow = T) 
-      #   }
-      #  
-      #   ### Another toy version
-      #   
-      #   tra <- matrix(nrow = length(tra_may$Id), ncol = 51)
-      #   tra[,1] <- tra_may$Id
-      #   
-      #   
-      #   tra_test <- tra_may[1:20,]
-      #   tra_test <- tra_test %>% select(Id,dur_DF,dur_ID, dur_DC, dur_C)
-      #   
-      #   
-      #   ### For this step, delete all the objects as it will be challenging for the memory
-      #   # rm(abc,B, link.may, tra_may, Test_X)
-      #     
-      #   #########################  
-      #   test_vec <- as.vector(c(rep("DF", tra_may$dur_DF[tra_may$Id==min(tra_may$Id)]),rep("ID", tra_may$dur_ID[tra_may$Id==min(tra_may$Id)]),
-      #                           rep("DC", tra_may$dur_DC[tra_may$Id==min(tra_may$Id)]), rep("C",tra_may$dur_C[tra_may$Id==min(tra_may$Id)])))
-      #   class(test_vec)
-      #   length(test_vec)
-      # 
-      #   
-      #   for (i in min(tra_test$Id):max(tra_test$Id)){
-      #    x <- list("")
-      #    x[i] <- list(as.vector(c(tra_test$Id[i], rep("DF", tra_test$dur_DF[tra_test$Id==i]),rep("ID", tra_test$dur_ID[tra_test$Id==i]),
-      #                             rep("DC", tra_test$dur_DC[tra_test$Id==i]), rep("C",tra_test$dur_C[tra_test$Id==i]))))
-      #   }
-      #   
-      #   tra <- matrix(nrow = length(tra_may$Id), ncol = 51)
-      #   # Add Id and sort from low to high
-      #   tra[,1] <- sort(tra_may$Id, decreasing = FALSE)
-      #   
-      #   
-      #   
-      #   for (i in min(tra_test$Id):max(tra_test$Id)){
-      #     tra[i,1] <-  as.vector(c(tra_may$Id[i], rep("DF", tra_may$dur_DF[tra_may$Id==i]),rep("ID", tra_may$dur_ID[tra_may$Id==i]),
-      #                             rep("DC", tra_may$dur_DC[tra_may$Id==i]), rep("C",tra_may$dur_C[tra_may$Id==i])))
-      #   }
-      #   
-      #   
-      # 
-      #   #########################
-      #   
-      #   
-      #   
-      #   seq_b <- tra_may[,12]
-      #                                 
-      #   tra_mat <- seqdecomp(seq_b)
-      #     
-      #   #### %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% ####
-      #   #### %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% ####
-      # 
-      #   
-      #   
-      #   
-      #   # Prepare Matrix for the seqdef() command
-      #   cbind(names(tra_may))
-      #   
-      #   seqmat <- tra_may[,c(13:25)]
-  

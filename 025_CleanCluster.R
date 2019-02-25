@@ -31,24 +31,26 @@ library(WeightedCluster)
 
 ### load data
 
-load("datasets/020_traMay.RData")
+# load("datasets/020_traMay.RData")
 # censored data
 load("datasets/020_traMay_C.RData")
+# censored data
+load("datasets/020_traMay_13.RData")
 # censored data with age of onset of a 12 A (ADL group A) disability as transition point from disability free to idependent dis
 load("datasets/020_traMay_12A.RData")
 
 # censored data 50 + disability
-# tra_may_C_50 <- tra_may_C %>% filter(EdadInicioDisca44>=50)
-tra_may_ADL_50 <- tra_may_12A %>% filter(edadiniciodisca12A>=50)
+ tra_may_C_50 <- tra_may_13 %>% filter(EdadInicioDisca13>=50)
+# tra_may_ADL_50 <- tra_may_12A %>% filter(edadiniciodisca12A>=50)
 ### 1.1 - Create separate datasets for men and women (literature: different timings and disability occurrences)
 
 
 ###########################################################
 ### A) CHANGE DATA SET DEPENDING ON NEEDS !!!!!!!!!!!!!!!!!
 ###########################################################
-tra_may_M <- tra_may_ADL_50 %>% filter(SEXO=="Varón") %>% mutate(SEXO="Male") %>%  filter(EdadInicioDisca44<100)
+tra_may_M <- tra_may_C_50 %>% filter(SEXO=="Varón") %>% mutate(SEXO="Male") %>%  filter(EdadInicioDisca13<100)
 
-tra_may_F <- tra_may_ADL_50 %>% filter(SEXO=="Mujer") %>% mutate(SEXO="Female") %>%  filter(EdadInicioDisca44<100)
+tra_may_F <- tra_may_C_50 %>% filter(SEXO=="Mujer") %>% mutate(SEXO="Female") %>%  filter(EdadInicioDisca13<100)
 
 
 ###########################################################
@@ -58,16 +60,16 @@ tra_may_F <- tra_may_ADL_50 %>% filter(SEXO=="Mujer") %>% mutate(SEXO="Female") 
 #### This next code piece excludes 2 females which potentially mess up the cluster plots
 
 # males
-tra_may_M <- tra_may_M %>% filter(Edadinicio_cuidado<100) %>%  filter(EdadInicioDisca44 <= age.ex) %>% filter(edadiniciodisca12A<100)
+tra_may_M <- tra_may_M %>% filter(Edadinicio_cuidado<100) %>%  filter(EdadInicioDisca13 <= age.ex) #%>% filter(edadiniciodisca12A<100)
 # females
-tra_may_F <- tra_may_F %>% filter(Edadinicio_cuidado<100) %>%  filter(EdadInicioDisca44 <= age.ex) %>% filter(edadiniciodisca12A<100)
+tra_may_F <- tra_may_F %>% filter(Edadinicio_cuidado<100) %>%  filter(EdadInicioDisca13 <= age.ex) #%>% filter(edadiniciodisca12A<100)
 
 ### 1.2. Create a matrix for the sequence analysis
 ### ---------------------------------------------
 
-seqmat_M <- tra_may_M[,c(14:64)]
+seqmat_M <- tra_may_M[,c(12:62)]
 
-seqmat_F <- tra_may_F[,c(14:64)]
+seqmat_F <- tra_may_F[,c(12:62)]
 
 ### 1.3 seqdef to create an object for TraMineR
 ### ---------------------------------------
@@ -206,21 +208,21 @@ plot(data.clust_F)
 # cutree command (2/3 groups)     ------------------- !!! Here be careful to use the right files
 
 clusterM <- cutree(clusterw_M, k = 2)
-clusterM2 <- cutree(clusterw_M, k = 4)
+clusterM2 <- cutree(clusterw_M, k = 3)
 
 clusterF <- cutree(clusterw_F, k = 2)
-clusterF2 <- cutree(clusterw_F, k = 3)
+clusterF2 <- cutree(clusterw_F, k = 4)
 
 # Create three factors for grouping (for now without descriptive name)
 clusterM <- factor(clusterM, labels = c("Type 1", "Type 2"))
 table(clusterM)
-clusterM2 <- factor(clusterM2, labels = c("Type 1", "Type 2", "Type 3", "Type 4"))
+clusterM2 <- factor(clusterM2, labels = c("Type 1", "Type 2", "Type 3"))
 table(clusterM2)
 
 
 clusterF <- factor(clusterF, labels = c("Type 1", "Type 2"))
 table(clusterF)
-clusterF2 <- factor(clusterF2, labels = c("Type 1", "Type 2", "Type 3"))
+clusterF2 <- factor(clusterF2, labels = c("Type 1", "Type 2", "Type 3", "Type 4"))
 table(clusterF2)
 
 
@@ -266,7 +268,7 @@ seqmtplot(DisSeq_F, group = clusterF2)
 tra_may_M$clusters2 <- data.clust_M$clustering$cluster2
 
 # 4 groups (OM object)
-tra_may_M$clusters4 <- data.clust_M$clustering$cluster4
+tra_may_M$clusters3 <- data.clust_M$clustering$cluster3
 
 # females 
 # -------
@@ -275,7 +277,7 @@ tra_may_M$clusters4 <- data.clust_M$clustering$cluster4
 tra_may_F$clusters2 <- data.clust_F$clustering$cluster2
 
 # 4 groups (OMslen object)
-tra_may_F$clusters3 <- data.clust_F$clustering$cluster3
+tra_may_F$clusters4 <- data.clust_F$clustering$cluster4
 
 
 # 2.7 Graphical check for the cluster
@@ -287,11 +289,11 @@ tra_may_F$clusters3 <- data.clust_F$clustering$cluster3
 
 # males 2 and 4 groups
 seqdplot(DisSeq_M, group=tra_may_M$clusters2)
-seqdplot(DisSeq_M, group=tra_may_M$clusters4)
+seqdplot(DisSeq_M, group=tra_may_M$clusters3)
 
 # females 2 and 3 groups
 seqdplot(DisSeq_F, group=tra_may_F$clusters2)
-seqdplot(DisSeq_F, group=tra_may_F$clusters3)
+seqdplot(DisSeq_F, group=tra_may_F$clusters4)
 
 
 # 3. Calculate medium age at death per cluster
@@ -304,18 +306,17 @@ seqdplot(DisSeq_F, group=tra_may_F$clusters3)
 ####### %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% ########
 
 # males
-tra_may_M <- tra_may_M %>% select(Id, clusters2, clusters4) %>% 
-              mutate(cluster2 = ifelse(clusters2==12, "late onset", "early onset")) %>% 
-              mutate(cluster4 = ifelse(clusters4==69, "middle abrupt", ifelse(clusters4==88, "early gradual",
-                                   ifelse(clusters4==972, "early abrupt", "late abrupt")))) %>% 
-              select(-clusters4, - clusters2)
+tra_may_M <- tra_may_M %>% select(Id, clusters2, clusters3) %>% 
+              mutate(cluster2 = ifelse(clusters2==16, "late onset", "early onset")) %>% 
+              mutate(cluster3 = ifelse(clusters3==1291, "late abrupt", ifelse(clusters3==527, "middle abrupt", "early gradual"))) %>% 
+              select(-clusters3, - clusters2)
 
 # females
-tra_may_F <- tra_may_F %>% select(Id, clusters2, clusters3) %>%
-             mutate(cluster2 = ifelse(clusters2==189, "late onset", "early onset")) %>%
-             mutate(cluster3 = ifelse(clusters3==221, "early abrupt", 
-                    ifelse(clusters3==2453,"late abrupt", "early gradual"))) %>% 
-             select(-clusters2, -clusters3)
+tra_may_F <- tra_may_F %>% select(Id, clusters2, clusters4) %>%
+             mutate(cluster2 = ifelse(clusters2==439, "late onset", "early onset")) %>%
+             mutate(cluster4 = ifelse(clusters4==1857, "early gradual", 
+                    ifelse(clusters4==2766,"late abrupt", ifelse(clusters4==91, "middle abrupt", "early abrupt")))) %>% 
+             select(-clusters2, -clusters4)
 
 ### For the A12 disabilities
 
@@ -335,10 +336,10 @@ tra_may_F_A12 <- tra_may_F %>% select(Id, clusters2, clusters3) %>%
 ## 3.2 order data set for linkage to big data set
 
 # males
-tra_may_M <- tra_may_M[order(tra_may_M_A12$Id),]
+tra_may_M <- tra_may_M_A12[order(tra_may_M_A12$Id),]
 
 # females
-tra_may_F <- tra_may_F[order(tra_may_F_A12$Id),]
+tra_may_F <- tra_may_F_A12[order(tra_may_F_A12$Id),]
 
 ## 3.3 Link back to big data set!
 
@@ -347,11 +348,17 @@ tra_may_F <- tra_may_F[order(tra_may_F_A12$Id),]
 ### Depending on the dataset, change the filters
 # --------------------------------------------
 
+# !!! CHANGE THE DATASET ACCORDING TO THE NEEDS
 
-load(file='010_mayor.link.RData')
+load(file='010_mayor50.link.RData')
 
-link.may <- link.may %>% filter(LIMIT!="NC") %>% filter(Edadinicio_cuidado<100) %>%  filter(EdadInicioDisca44<100) %>% filter(EdadInicioDisca44 <= age.ex) %>% filter(!is.na(edadiniciodisca12A))  %>% 
-  filter(edadiniciodisca12A<100) %>% filter(edadiniciodisca12A>=50) #%>% filter(EdadInicioDisca44>=50) %>%  filter(EdadInicioDisca44>50) # 
+# !!! CHANGE THE DATASET ACCORDING TO THE NEEDS
+link.may <- link.may50 %>% filter(LIMIT!="NC") %>% filter(Edadinicio_cuidado<100) %>% filter(!is.na(EdadInicioDisca13)) %>% 
+  filter(as.numeric(EdadInicioDisca13)>=50) %>% filter(as.numeric(EdadInicioDisca13) <= as.numeric(age.ex)) %>%  
+  filter(as.numeric(EdadInicioDisca13)<100)
+
+# %>% filter(!is.na(edadiniciodisca12A)) %>% filter(edadiniciodisca12A<100)  %>%  filter(edadiniciodisca12A>=50) %>% 
+# filter(EdadInicioDisca44<100) %>% filter(EdadInicioDisca44>=50) %>%  filter(EdadInicioDisca44>50) # 
 
 
 # make 2 data sets out of them (by sex) and order them
