@@ -1,5 +1,7 @@
-# Need to run 020_Link_EDAD08_Followup.R at least once
-# --------------------------------------------------
+
+# ----------------------------------------
+# Need to run 020_Link_EDAD08_Followup.R !
+# ----------------------------------------
 
 # 0.1. Packages
 # -------------
@@ -26,13 +28,8 @@ load(file='010_mayor50.link.RData')           ### !!! Change when different data
 # 1.0. Select Population - Get rid of the "NC" cases for now and only extract the dependent ones
 # -----------------------------------------------------------------------------------------------
 
-link.may <- link.may50 %>% filter(LIMIT!="NC") %>% 
-  ####
-  ####
-  #### AND at this point only extract the ones who are dependent in 2008
-  ####
-  filter(!is.na(Edadinicio_cuidado))   
-
+# Enter name of the dataset right of the equation sign (in case different data is used)
+link.may <- link.may50 
 link.may <- data.table(link.may)
 
 
@@ -65,35 +62,21 @@ link.may <- data.table(link.may)
 link.may$EdadInicioDisca13 <- as.numeric(link.may$EdadInicioDisca13)
 
 link.may %>% count(EdadInicioDisca13 < age.ex)
-link.may %>% count(round(EdadInicioDisca13,0) < round(EDAD,0))   ### THIS SHOULD NOT BE POSSIBLE
+link.may %>% count(EdadInicioDisca13 > EDAD)              ### THIS SHOULD NOT BE POSSIBLE (91 cases)
 
 ## FIX (Listwise deletion)
 
-link.may <- link.may %>% filter(round(EdadInicioDisca13,0) < round(EDAD,0))  
-# 133 cases in both (assuming they are the same)
+link.may <- link.may %>% filter(EdadInicioDisca13 <= EDAD)  
 
 
-# 1.1.2 Age distribution (disability)
-#####################################
-
-
-# Exit age
-# ---------
-with(link.may, tapply(age.ex, list(event,LIMIT), mean)) # Just mean ages but still the No cases are puzzeling 
-# (What's NC?)
+# Estado - A = censored , B = Bajas (death and migration)
+# -------------------------------------------------------
 
 table(link.may$estado)
   # A    B(ajas = refers to either events (death) or outmigration) 
-  # 1171 3590 
+  # 1758 3692
 link.may <- data.table(link.may)
 link.may[,.N,.(enlazado,estado)] 
-
-# By disability status
-# --------------------
-round(prop.table(table(link.may$event, link.may$Gravity),2),3)
-
-with(link.may, tapply(age.ex, list(event,Gravity), mean))
-
 
 # check distribution of exit ages            (looks normal)
 # -------------------------------
@@ -109,19 +92,72 @@ link.may %>% mutate(event = as.factor(event)) %>%
   theme_bw()    
 # looks believable - most of the members of this very frail group die during the observation period
 
+# Be aware of age heaping!
 
 #### ----------------------------------------------------- ####
 #### 2. Assigning time information for crucial time points ####
 #### ----------------------------------------------------- ####
 
-## 2.1. Onset of disability by kind of disability
-## ----------------------------------------------
+
+## 2.1. Onset of incapacity of an activity of daily living (by severity)
+## ---------------------------------------------------------------------
+
+# For first onset age use "EdadInicioDisca13"
+
+# Minimum age for onset of one of the 13 (I)ADLs (Using the age information for single disabilities)
+
+table(link.may$MOV_18_2)
+
+# recode all severity variables (DISCA 13) in two groups
+link.may <- link.may %>%
+  # change posture/move
+  mutate(DIS_1_S = ifelse(MOV_18_2=="Con dificultad moderada", "mild", "severe")) %>% 
+  # walking and moving inside
+  mutate(DIS_2_S = ifelse(MOV_20_2=="Con dificultad moderada", "mild", "severe")) %>%
+  # walking and moving outside
+  mutate(DIS_3_S = ifelse(MOV_21_2=="Con dificultad moderada", "mild", "severe")) %>% 
+  # Sitting down & using public transport
+  mutate(DIS_4_S = ifelse(MOV_22_2=="Con dificultad moderada", "mild", "severe")) %>% 
+  # washing and drying
+  mutate(DIS_5_S = ifelse(AUT_27_2=="Con dificultad moderada", "mild", "severe")) %>% 
+  # basic hygene
+  mutate(DIS_6_S = ifelse(AUT_28_2=="Con dificultad moderada", "mild", "severe")) %>% 
+  # urinating
+  mutate(DIS_7_S = ifelse(AUT_29_2=="Con dificultad moderada", "mild", "severe")) %>% 
+  # bathroom
+  mutate(DIS_8_S = ifelse(AUT_30_2=="Con dificultad moderada", "mild", "severe")) %>% 
+  # dressing and undressing
+  mutate(DIS_9_S = ifelse(AUT_32_2=="Con dificultad moderada", "mild", "severe")) %>% 
+  # eating and drinking
+  mutate(DIS_10_S = ifelse(AUT_33_2=="Con dificultad moderada", "mild", "severe")) %>% 
+  # organising shopping for groceries
+  mutate(DIS_11_S = ifelse(VDOM_36_2=="Con dificultad moderada", "mild", "severe")) %>% 
+  # preparing food
+  mutate(DIS_12_S = ifelse(VDOM_37_2=="Con dificultad moderada", "mild", "severe")) %>% 
+  # household tasks
+  mutate(DIS_13_S = ifelse(AUT_28_2=="Con dificultad moderada", "mild", "severe"))
+  
+  
+# recode entry age into first severe limitation (DISCA 13)
+link.mayX <- link.may %>% 
+  mutate(DIS_1_SA = ifelse(DIS_1_S=="severe", MOV_18_5, 999)) %>% 
+  mutate(DIS_2_SA = ifelse(DIS_2_S=="severe", MOV_20_5, 999)) %>% 
+  mutate(DIS_3_SA = ifelse(DIS_3_S=="severe", MOV_21_5, 999)) %>% 
+  mutate(DIS_4_SA = ifelse(DIS_4_S=="severe", MOV_22_5, 999)) %>% 
+  mutate(DIS_5_SA = ifelse(DIS_5_S=="severe", AUT_27_5, 999)) %>% 
+  mutate(DIS_6_SA = ifelse(DIS_6_S=="severe", AUT_28_5, 999)) %>% 
+  mutate(DIS_7_SA = ifelse(DIS_7_S=="severe", AUT_29_5, 999)) %>% 
+  mutate(DIS_8_SA = ifelse(DIS_8_S=="severe", AUT_30_5, 999)) %>% 
+  mutate(DIS_9_SA = ifelse(DIS_9_S=="severe", AUT_32_5, 999)) %>% 
+  mutate(DIS_10_SA = ifelse(DIS_10_S=="severe", AUT_33_5, 999)) %>% 
+  mutate(DIS_11_SA = ifelse(DIS_11_S=="severe", VDOM_36_5, 999)) %>% 
+  mutate(DIS_12_SA = ifelse(DIS_12_S=="severe", VDOM_37_5, 999)) %>% 
+  mutate(DIS_13_SA = ifelse(DIS_13_S=="severe", VDOM_38_5, 999))
+  
+  mutate(EntryGrave13 = with(pmin()))
 
 
-## 2.2. Onset of incapacity of an activity of daily living
-## -------------------------------------------------------
-
-# 2.2.1 ABC Scheme
+# 2.2 ABC Scheme
 # ----------------
 # Group A : disabled individuals which are able to live by themselves
 # Group B : individuals are incapable of doing housework
