@@ -93,6 +93,37 @@ summary(link.may_F$dur_dis)
 # Dependency and Death
 
 
+# Duration in states
+# ------------------
+
+      # # For now under the assumption (can be verified in the aftermath) that the states are inconvertible
+      # 
+      # tra_may <- tra_may %>% 
+      #   
+      #   # 1. start with the duration of disability free years after 50
+      #   # Calculated as age after age 50 when first disability occurs - age 50 (= disability free duration after age 50)
+      #   mutate(dur_DF = ifelse(EdadInicioDisca13>=50,round(EdadInicioDisca13-50,0),0)) %>% 
+      #   
+      #   # 2. second state duration after onset of disability but before help or assistance is needed
+      #   ### Important to remember is that independence does not necessarily mean that a diagnosed disability has occurred
+      #   
+      #   # Calculated as: Age at when personal assistance is needed - Age at onset of disability/impairment OR if the age when first
+      #   # personal assistance is requested was first, this age minus age 50, if they age of first assistance occured first, the independent time is 0
+      #   
+      #   mutate(dur_ID = ifelse(Edadinicio_cuidado>=50 & Edadinicio_cuidado > EdadInicioDisca13, 
+      #                          round(((Edadinicio_cuidado - EdadInicioDisca13)-(50-EdadInicioDisca13)),0),
+      #                          ifelse(Edadinicio_cuidado>=50 & EdadInicioDisca13>=50 & Edadinicio_cuidado <= EdadInicioDisca13,round(Edadinicio_cuidado,0) - 50,0))) %>% 
+      #   
+      #   # Little trick to avoid problems with cases where care taking occured before the diagnosis of disability
+      #   mutate(dur_DF = ifelse(dur_DF>=dur_ID, 0, dur_DF)) %>%
+      #   # A further change necessary to obtain the difference between onset of disability and dependency as time independent
+      #   mutate(dur_ID = dur_ID-dur_DF) %>% 
+      #   
+      #   # 3. Duration in Dependency until right censoring
+      #   mutate(dur_DC = EDAD-round(Edadinicio_cuidado,0)) %>% 
+      #   # 4. State 4 is just for programming reasons - Censorship (duration between age at interview and 100)
+      #   mutate(dur_C = ifelse(EDAD>100, 0, 100-EDAD))
+
 
 ##### 2. Distribution of explanatory variables by sex and cluster
 ##### %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

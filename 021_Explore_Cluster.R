@@ -71,12 +71,11 @@ link.may <- link.may %>% filter(EdadInicioDisca13 <= EDAD)
 
 # Estado - A = censored , B = Bajas (death and migration)
 # -------------------------------------------------------
-
-table(link.may$estado)
-  # A    B(ajas = refers to either events (death) or outmigration) 
-  # 1758 3692
 link.may <- data.table(link.may)
 link.may[,.N,.(enlazado,estado)] 
+# A    B(ajas = refers to either events (death) or outmigration) 
+# 1176 3359 
+
 
 # check distribution of exit ages            (looks normal)
 # -------------------------------
@@ -139,22 +138,29 @@ link.may <- link.may %>%
   
   
 # recode entry age into first severe limitation (DISCA 13)
-link.mayX <- link.may %>% 
-  mutate(DIS_1_SA = ifelse(DIS_1_S=="severe", MOV_18_5, 999)) %>% 
-  mutate(DIS_2_SA = ifelse(DIS_2_S=="severe", MOV_20_5, 999)) %>% 
-  mutate(DIS_3_SA = ifelse(DIS_3_S=="severe", MOV_21_5, 999)) %>% 
-  mutate(DIS_4_SA = ifelse(DIS_4_S=="severe", MOV_22_5, 999)) %>% 
-  mutate(DIS_5_SA = ifelse(DIS_5_S=="severe", AUT_27_5, 999)) %>% 
-  mutate(DIS_6_SA = ifelse(DIS_6_S=="severe", AUT_28_5, 999)) %>% 
-  mutate(DIS_7_SA = ifelse(DIS_7_S=="severe", AUT_29_5, 999)) %>% 
-  mutate(DIS_8_SA = ifelse(DIS_8_S=="severe", AUT_30_5, 999)) %>% 
-  mutate(DIS_9_SA = ifelse(DIS_9_S=="severe", AUT_32_5, 999)) %>% 
-  mutate(DIS_10_SA = ifelse(DIS_10_S=="severe", AUT_33_5, 999)) %>% 
-  mutate(DIS_11_SA = ifelse(DIS_11_S=="severe", VDOM_36_5, 999)) %>% 
-  mutate(DIS_12_SA = ifelse(DIS_12_S=="severe", VDOM_37_5, 999)) %>% 
-  mutate(DIS_13_SA = ifelse(DIS_13_S=="severe", VDOM_38_5, 999))
-  
-  mutate(EntryGrave13 = with(pmin()))
+link.may <- link.may %>% 
+  mutate(DIS_1_SA = ifelse(DIS_1_S=="severe", MOV_18_5, 999)) %>% mutate(DIS_1_SA = ifelse(is.na(DIS_1_SA),999, DIS_1_SA)) %>% 
+  mutate(DIS_2_SA = ifelse(DIS_2_S=="severe", MOV_20_5, 999)) %>% mutate(DIS_2_SA = ifelse(is.na(DIS_2_SA),999, DIS_2_SA)) %>%
+  mutate(DIS_3_SA = ifelse(DIS_3_S=="severe", MOV_21_5, 999)) %>% mutate(DIS_3_SA = ifelse(is.na(DIS_3_SA),999, DIS_3_SA)) %>%
+  mutate(DIS_4_SA = ifelse(DIS_4_S=="severe", MOV_22_5, 999)) %>% mutate(DIS_4_SA = ifelse(is.na(DIS_4_SA),999, DIS_4_SA)) %>%
+  mutate(DIS_5_SA = ifelse(DIS_5_S=="severe", AUT_27_5, 999)) %>% mutate(DIS_5_SA = ifelse(is.na(DIS_5_SA),999, DIS_5_SA)) %>%
+  mutate(DIS_6_SA = ifelse(DIS_6_S=="severe", AUT_28_5, 999)) %>% mutate(DIS_6_SA = ifelse(is.na(DIS_6_SA),999, DIS_6_SA)) %>%
+  mutate(DIS_7_SA = ifelse(DIS_7_S=="severe", AUT_29_5, 999)) %>% mutate(DIS_7_SA = ifelse(is.na(DIS_7_SA),999, DIS_7_SA)) %>%
+  mutate(DIS_8_SA = ifelse(DIS_8_S=="severe", AUT_30_5, 999)) %>% mutate(DIS_8_SA = ifelse(is.na(DIS_8_SA),999, DIS_8_SA)) %>%
+  mutate(DIS_9_SA = ifelse(DIS_9_S=="severe", AUT_32_5, 999)) %>% mutate(DIS_9_SA = ifelse(is.na(DIS_9_SA),999, DIS_9_SA)) %>%
+  mutate(DIS_10_SA = ifelse(DIS_10_S=="severe", AUT_33_5, 999)) %>% mutate(DIS_10_SA = ifelse(is.na(DIS_10_SA),999, DIS_10_SA)) %>%
+  mutate(DIS_11_SA = ifelse(DIS_11_S=="severe", VDOM_36_5, 999)) %>% mutate(DIS_11_SA = ifelse(is.na(DIS_11_SA),999, DIS_11_SA)) %>%
+  mutate(DIS_12_SA = ifelse(DIS_12_S=="severe", VDOM_37_5, 999)) %>% mutate(DIS_12_SA = ifelse(is.na(DIS_12_SA),999, DIS_12_SA)) %>%
+  mutate(DIS_13_SA = ifelse(DIS_13_S=="severe", VDOM_38_5, 999)) %>% mutate(DIS_13_SA = ifelse(is.na(DIS_13_SA),999, DIS_13_SA)) %>% 
+
+## Now compute the column minimum (gives the entry age to severity)
+  mutate(EntryGrave13 =pmin(DIS_1_SA, DIS_2_SA, DIS_3_SA, DIS_4_SA, DIS_5_SA, DIS_6_SA,
+                                  DIS_7_SA, DIS_8_SA, DIS_9_SA, DIS_10_SA, DIS_11_SA, DIS_12_SA,
+                                  DIS_13_SA))
+
+
+summary(link.may$EntryGrave13)
+hist(link.may$EntryGrave13[link.may$EntryGrave13<999])
 
 
 # 2.2 ABC Scheme
@@ -223,64 +229,13 @@ summary(abc)
   
   ## 3.1. Subdata set with information on Age, Entry to disability, A, B, C, and dependency
   ## ---------------------------------------------------------------------------------------
-  tra_may <- link.may %>% select(Id, SEXO, EDAD, EdadInicioDisca44, EdadInicioDisca13, Edadinicio_cuidado, age.ex) # edadiniciodisca12A,
+  tra_may <- link.may %>% select(Id, SEXO, EDAD, EdadInicioDisca44, EdadInicioDisca13, Edadinicio_cuidado, age.ex, EntryGrave13) # edadiniciodisca12A,
   
   
-  ## 3.2. Define an alphabet for the different states an individual can obtain
-  ## -------------------------------------------------------------------------
-  
-  # Alphabet 2 (4-5 states)
-  # DF = Disability Free
-  # ID = Idenpendent albeit first disability
-  # DC = Dependent on Caretaker
-  # RC = Right Censored
-  
-  SeqAlphab_2 <- c("DF","ID", "DC", "C")
-  
-  # 3.3. Define color scheme
-  display.brewer.all()
-  Brewer_2 <- brewer.pal(4, "Dark2")
-  
-  # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% #
-  
-  
-  
+
   # # -----------------  
   # # Fun with strings
   # # -----------------
-  # 
-  # # Preparation: round the age of first disability and dependency
-  # tra_may <- tra_may %>% mutate(age_f_dis = round(EdadInicioDisca44,0)) %>% 
-  #                        mutate(age_dep = round(Edadinicio_cuidado,0))
-  # 
-  # # Approach 1
-  # #
-  # #  This needs a fix!
-  # #
-  # tra_may <- tra_may %>% mutate(disstring = ifelse(EdadInicioDisca44<50, paste(rep("FD", 50), collapse = "-"),
-  #                                                  ifelse(EdadInicioDisca44>=50, paste0(paste(strrep("DF", age_f_dis-50), collapse = "-"),
-  #                                                         paste(strrep("FD",100-age_f_dis), collapse = "-"), sep = " "),
-  #                                                  ifelse(
-  #                                                           
-  #                                                         ))))
-  # 
-  # tra_may <- tra_may %>% mutate(time_df = ifelse(EdadInicioDisca44>=50, round(age_f_dis-49.9,0), 50)) %>% mutate(time_fd = 101-age_f_dis) %>% 
-  #                        mutate(disstring = ifelse(EdadInicioDisca44<50, paste(rep("FD", 50), collapse = "-"),
-  #                                                  ifelse(EdadInicioDisca44>=50, paste0(paste(strrep("DF", time_df), collapse = "-"),
-  #                                                                                       paste(strrep("FD",time_fd), collapse = "-"), sep = " "),"A"
-  #                                                         )))
-  # 
-  # # # With a vector
-  # # d <- c("fig", "grapefruit", "honeydew")
-  # # 
-  # # # If the input is a vector, use collapse to put the elements together:
-  # # paste(d, collapse=", ")
-  # # #> [1] "fig, grapefruit, honeydew"
-  # 
-  # paste0(strrep(0, 10 - nchar(test$x)), test$x)
-  # 
-  # 
-  # # Approach 2
   # 
   # tra_may$disstring <- ifelse(tra_may$EdadInicioDisca44<50,strrep("FD",50),0)
   # tra_may$disstring <- ifelse(tra_may$EdadInicioDisca44>50, paste(rep("DF", 50:round(tra_may$EdadInicioDisca44,0))))
@@ -291,40 +246,7 @@ summary(abc)
   #### %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% ####
   
     # Approach 3 - Try it with durations which a person spent in a particular state and combine everything in the end with 3 1/2 states for now
-  
-  # For now under the assumption (can be verified in the aftermath) that the states are inconvertible
-  
-  tra_may <- tra_may %>% 
-    
-    # 1. start with the duration of disability free years after 50
-      # Calculated as age after age 50 when first disability occurs - age 50 (= disability free duration after age 50)
-    mutate(dur_DF = ifelse(EdadInicioDisca13>=50,round(EdadInicioDisca13-50,0),0)) %>% 
-    
-    # 2. second state duration after onset of disability but before help or assistance is needed
-    ### Important to remember is that independence does not necessarily mean that a diagnosed disability has occurred
-      
-    # Calculated as: Age at when personal assistance is needed - Age at onset of disability/impairment OR if the age when first
-    # personal assistance is requested was first, this age minus age 50, if they age of first assistance occured first, the independent time is 0
-
-    mutate(dur_ID = ifelse(Edadinicio_cuidado>=50 & Edadinicio_cuidado > EdadInicioDisca13, 
-                           round(((Edadinicio_cuidado - EdadInicioDisca13)-(50-EdadInicioDisca13)),0),
-                           ifelse(Edadinicio_cuidado>=50 & EdadInicioDisca13>=50 & Edadinicio_cuidado <= EdadInicioDisca13,round(Edadinicio_cuidado,0) - 50,0))) %>% 
-    
-    # Little trick to avoid problems with cases where care taking occured before the diagnosis of disability
-    mutate(dur_DF = ifelse(dur_DF>=dur_ID, 0, dur_DF)) %>%
-    # A further change necessary to obtain the difference between onset of disability and dependency as time independent
-    mutate(dur_ID = dur_ID-dur_DF) %>% 
-    
-    # 3. Duration in Dependency until right censoring
-    mutate(dur_DC = EDAD-round(Edadinicio_cuidado,0)) %>% 
-    # 4. State 4 is just for programming reasons - Censorship (duration between age at interview and 100)
-    mutate(dur_C = ifelse(EDAD>100, 0, 100-EDAD))
-
-  
-  ### Now prepare the compressed sequences from here:
-  
-  # tra_may <- tra_may %>% mutate(disstring = paste(rep("DF", dur_DF), rep("ID", dur_ID), rep("DC", dur_DC), rep("C", dur_C), collapse = "-"))
-  # Doesn´t work because of invalid time argument
+  #### %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% #####
   
 ### Kindergarten dataframe approach (One Variable for EACH time point) - copy and paste work
 tra_may_C <- tra_may %>% mutate("50" = ifelse(EdadInicioDisca44>=50, "DF", ifelse(Edadinicio_cuidado>=50, "ID", ifelse(EDAD>=50,"DC", NA)))) %>% 
