@@ -145,20 +145,47 @@ link.may50 %>% count(!is.na(EdadInicioDisca13))
 link.may50 <- data.table(link.may50)
 link.may50[, .N, .(!is.na(EdadInicioDisca44))] # everybody 
 link.may50[, .N, .(!is.na(EdadInicioDisca13))] # 133 cases
-
+link.may50[!is.na(EdadInicioDisca44), .N, .(as.numeric(EdadInicioDisca44)>=50)] # 1466 cases before age 50
 link.may50[!is.na(EdadInicioDisca13), .N, .(as.numeric(EdadInicioDisca13)>=50)] # 915 cases
+link.may50[is.na(EdadInicioDisca13), .N, .(as.numeric(EdadInicioDisca44)>=50)] #  88 cases   (we might be able to recover)
 
-link.may50[, .N, .(as.numeric(!is.na(EdadInicioDisca13))<=as.numeric(!is.na(Edadinicio_cuidado)))] 
+
+link.may50[, .N, .(as.numeric(!is.na(EdadInicioDisca13))<=as.numeric(!is.na(Edadinicio_cuidado)))]  # todos
 
 # Exclude the 133 cases that haven´t experienced a DISCA13 ADL limitations
-link.may50 <- link.may50 %>% filter(!is.na(EdadInicioDisca13))
+# link.may50 <- link.may50 %>% filter(!is.na(EdadInicioDisca13))
 
 class(link.may50$EdadInicioDisca13)
 link.may50$EdadInicioDisca13 <- as.numeric(as.factor(link.may50$EdadInicioDisca13))
 
 table(link.may50$EdadInicioDisca13>=50)
 
-link.may50 <- link.may50 %>% filter(EdadInicioDisca13>=50)
+## Create a new DISCA 13 Entry AGE
+
+table(link.may50$Disca13) # only 97 cases! (less than when using the age variable)
+
+link.may50 <- link.may50 %>% 
+  mutate(DIS_1_A = ifelse(!is.na(MOV_18_5), MOV_18_5, 999)) %>% 
+  mutate(DIS_2_A = ifelse(!is.na(MOV_20_5), MOV_20_5, 999)) %>%
+  mutate(DIS_3_A = ifelse(!is.na(MOV_21_5), MOV_21_5, 999)) %>% 
+  mutate(DIS_4_A = ifelse(!is.na(MOV_22_5), MOV_22_5, 999)) %>% 
+  mutate(DIS_5_A = ifelse(!is.na(AUT_27_5), AUT_27_5, 999)) %>% 
+  mutate(DIS_6_A = ifelse(!is.na(AUT_28_5), AUT_28_5, 999)) %>% 
+  mutate(DIS_7_A = ifelse(!is.na(AUT_29_5), AUT_29_5, 999)) %>% 
+  mutate(DIS_8_A = ifelse(!is.na(AUT_30_5), AUT_30_5, 999)) %>% 
+  mutate(DIS_9_A = ifelse(!is.na(AUT_32_5), AUT_32_5, 999)) %>% 
+  mutate(DIS_10_A = ifelse(!is.na(AUT_33_5), AUT_33_5, 999)) %>% 
+  mutate(DIS_11_A = ifelse(!is.na(VDOM_36_5), VDOM_36_5, 999)) %>% 
+  mutate(DIS_12_A = ifelse(!is.na(VDOM_37_5), VDOM_37_5, 999)) %>% 
+  mutate(DIS_13_A = ifelse(!is.na(VDOM_38_5), VDOM_38_5, 999)) %>% 
+  
+  ## Now compute the column minimum (gives the entry age to severity)
+  mutate(DISCA13_AGE = pmin(DIS_1_A, DIS_2_A, DIS_3_A, DIS_4_A, DIS_5_A, DIS_6_A,
+                            DIS_7_A, DIS_8_A, DIS_9_A, DIS_10_A, DIS_11_A, DIS_12_A,
+                            DIS_13_A)) 
+  
+
+link.may50 <- link.may50 %>% filter(DISCA13_AGE>=50) %>% filter(DISCA13_AGE<999)
 
 # -----------------------------------------------
 # save(link.may50, file='010_mayor50.link.RData')

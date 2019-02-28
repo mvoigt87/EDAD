@@ -48,9 +48,9 @@ load("datasets/020_traMay_12A.RData")
 ###########################################################
 ### A) CHANGE DATA SET DEPENDING ON NEEDS !!!!!!!!!!!!!!!!!
 ###########################################################
-tra_may_M <- tra_may_C_50 %>% filter(SEXO=="Varón") %>% mutate(SEXO="Male") %>%  filter(EdadInicioDisca13<100)
+tra_may_M <- tra_may_C_50 %>% filter(SEXO=="Varón") %>% mutate(SEXO="Male") %>%  filter(DISCA13_AGE<100)
 
-tra_may_F <- tra_may_C_50 %>% filter(SEXO=="Mujer") %>% mutate(SEXO="Female") %>%  filter(EdadInicioDisca13<100)
+tra_may_F <- tra_may_C_50 %>% filter(SEXO=="Mujer") %>% mutate(SEXO="Female") %>%  filter(DISCA13_AGE<100)
 
 
 ###########################################################
@@ -67,9 +67,9 @@ tra_may_F <- tra_may_F %>% filter(Edadinicio_cuidado<100) %>%  filter(EdadInicio
 ### 1.2. Create a matrix for the sequence analysis
 ### ---------------------------------------------
 
-seqmat_M <- tra_may_M[,c(12:62)]
+seqmat_M <- tra_may_M[,c(10:60)]
 
-seqmat_F <- tra_may_F[,c(12:62)]
+seqmat_F <- tra_may_F[,c(10:60)]
 
 ### 1.3 seqdef to create an object for TraMineR
 ### ---------------------------------------
@@ -78,25 +78,25 @@ seqmat_F <- tra_may_F[,c(12:62)]
 
 # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% #
 
-# 1.3.1 Requirement of TraMineR to define the alphabet and colors
+# 1.3.1 Requirement of TraMineR to define the alphabet and colors (!!!ADDED MD for mild disability)
 
-SeqAlphab_C <- c("DF","ID", "DC")
+SeqAlphab_C <- c("DF", "MD", "ID", "DC")
 
 # Define color scheme
-Brewer_C <- brewer.pal(3, "Set1")
+Brewer_C <- brewer.pal(4, "Set1")
 
 
 # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% #
 
 # Male
 DisSeq_M <- seqdef(seqmat_M,informat = "STS", alphabet = SeqAlphab_C, id="auto", cpal =  Brewer_C ,start = 55, 
-                   labels = c("Disability Free","Idependent","Care"))
+                   labels = c("Disability Free", "Mild Disability", "Idependent","Care"))
 
 summary(DisSeq_M) # 1495 cases
 
 # Females
 DisSeq_F <- seqdef(seqmat_F,informat = "STS", alphabet = SeqAlphab_C, id="auto", cpal =  Brewer_C ,start = 55, 
-                   labels = c("Disability Free","Idependent","Care"))
+                   labels = c("Disability Free", "Mild Disability", "Idependent","Care"))
 
 summary(DisSeq_F) # 3266 cases
 
@@ -208,21 +208,21 @@ plot(data.clust_F)
 # cutree command (2/3 groups)     ------------------- !!! Here be careful to use the right files
 
 clusterM <- cutree(clusterw_M, k = 2)
-clusterM2 <- cutree(clusterw_M, k = 3)
+clusterM2 <- cutree(clusterw_M, k = 4)
 
 clusterF <- cutree(clusterw_F, k = 2)
-clusterF2 <- cutree(clusterw_F, k = 4)
+clusterF2 <- cutree(clusterw_F, k = 5)
 
 # Create three factors for grouping (for now without descriptive name)
 clusterM <- factor(clusterM, labels = c("Type 1", "Type 2"))
 table(clusterM)
-clusterM2 <- factor(clusterM2, labels = c("Type 1", "Type 2", "Type 3"))
+clusterM2 <- factor(clusterM2, labels = c("Type 1", "Type 2", "Type 3", "Type 4"))
 table(clusterM2)
 
 
 clusterF <- factor(clusterF, labels = c("Type 1", "Type 2"))
 table(clusterF)
-clusterF2 <- factor(clusterF2, labels = c("Type 1", "Type 2", "Type 3", "Type 4"))
+clusterF2 <- factor(clusterF2, labels = c("Type 1", "Type 2", "Type 3", "Type 4", "Type 5"))
 table(clusterF2)
 
 
@@ -268,7 +268,7 @@ seqmtplot(DisSeq_F, group = clusterF2)
 tra_may_M$clusters2 <- data.clust_M$clustering$cluster2
 
 # 4 groups (OM object)
-tra_may_M$clusters3 <- data.clust_M$clustering$cluster3
+tra_may_M$clusters3 <- data.clust_M$clustering$cluster4
 
 # females 
 # -------
@@ -277,7 +277,7 @@ tra_may_M$clusters3 <- data.clust_M$clustering$cluster3
 tra_may_F$clusters2 <- data.clust_F$clustering$cluster2
 
 # 4 groups (OMslen object)
-tra_may_F$clusters4 <- data.clust_F$clustering$cluster4
+tra_may_F$clusters4 <- data.clust_F$clustering$cluster5
 
 
 # 2.7 Graphical check for the cluster
