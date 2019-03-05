@@ -62,13 +62,13 @@ load(file = 'datasets/030_linkmay_F_50ADL.RData')
 link.may_M %>% group_by(cluster2) %>% summarize(mean=mean(age.ex[event==1]), median=median(age.ex[event==1]))
 
 # males 4 clusters
-link.may_M %>% group_by(cluster4) %>% summarize(mean=mean(age.ex[event==1]), median=median(age.ex[event==1]))
+link.may_M %>% group_by(cluster5) %>% summarize(mean=mean(age.ex[event==1]), median=median(age.ex[event==1]))
 
 # females 2 cluster
 link.may_F %>% group_by(cluster2) %>% summarize(mean=mean(age.ex[event==1]), median=median(age.ex[event==1]))
 
 # females 3 clusters
-link.may_F %>% group_by(cluster3) %>% summarize(mean=mean(age.ex[event==1]), median=median(age.ex[event==1]))
+link.may_F %>% group_by(cluster4) %>% summarize(mean=mean(age.ex[event==1]), median=median(age.ex[event==1]))
 
 # Check the NAs (exclude them!)
 
@@ -79,14 +79,41 @@ link.may_F %>% group_by(cluster3) %>% summarize(mean=mean(age.ex[event==1]), med
 
 ###### !!! Change accordingly if you want to use a different data source
 
-# look at the distribution
-link.may_M <- link.may_M %>% mutate(dur_dis = round(age.ex,0)-round(EdadInicioDisca44,0))
+# look at the distribution of onset of ADL
+
+# Males
+link.may_M <- link.may_M %>% mutate(dur_dis = round(age.ex,0)-round(EdadInicioDisca13,0))
 hist(link.may_M$dur_dis)
 summary(link.may_M$dur_dis)
-# same for females
-link.may_F <- link.may_F %>% mutate(dur_dis = round(age.ex,0)-round(EdadInicioDisca44,0))
+# event distribution by duration in disability
+# --------------------------------------------
+DUR_Plot_M <- link.may_M %>% mutate(event = as.factor(event)) %>% 
+  ggplot(aes(x=dur_dis, fill=event)) +
+  geom_histogram(aes(y=0.5*..density..), binwidth=0.5) +
+  scale_x_continuous(name = "Duration in Disability (Years)") +
+  scale_y_continuous(name = "Relative Frequency",labels = scales::percent) +
+  scale_fill_manual(name = "", values=c("#000000", "#A9A9A9"), labels = c("Survivors", "Deceased")) +
+  theme_bw()
+DUR_Plot_M <- DUR_Plot_M + theme(legend.position = c(0.85, 0.80)) + 
+  theme(axis.text=element_text(size=12), axis.title=element_text(size=12,face="bold"))
+   
+                                                                          
+link.may_F <- link.may_F %>% mutate(dur_dis = round(age.ex,0)-round(EdadInicioDisca13,0))
 hist(link.may_F$dur_dis)
 summary(link.may_F$dur_dis)
+
+# event distribution by duration in disability
+# --------------------------------------------
+DUR_Plot_F <- link.may_F %>% mutate(event = as.factor(event)) %>% 
+  ggplot(aes(x=dur_dis, fill=event)) +
+  geom_histogram(aes(y=0.5*..density..), binwidth=0.5) +
+  scale_x_continuous(name = "Duration in Disability (Years)") +
+  scale_y_continuous(name = "Relative Frequency",labels = scales::percent) +
+  scale_fill_manual(name = "", values=c("#000000", "#A9A9A9"), labels = c("Survivors", "Deceased")) +
+  theme_bw()
+DUR_Plot_F <- DUR_Plot_F + theme(legend.position = c(0.85, 0.80)) + theme(axis.text=element_text(size=12),
+                                                                          axis.title=element_text(size=12,face="bold"))  
+
 
 
 
@@ -172,47 +199,13 @@ KME1 <- KME.CLustM %>% ggplot() +
   scale_x_continuous(name = "Age") +
   scale_colour_manual(values = c("orange", "darkgrey"), name="")     +
   theme_bw()
-KME1 + facet_grid(. ~ sex)
-
-# Males second cluster option
-# ---------------------------
-
-mfit.2a <- survfit(coxph(Surv(time=EDAD,
-                              time2 = age.ex,
-                              event = event) ~ 1, data = subset(link.may_M, cluster4=="early abrupt")), data = subset(link.may_M, cluster4=="early abrupt"),
-                   type = "kaplan-meier")
-mfit.2b <- survfit(coxph(Surv(time=EDAD,
-                              time2 = age.ex,
-                              event = event) ~ 1, data = subset(link.may_M, cluster4=="early gradual")), data = subset(link.may_M, cluster4=="early gradual"),
-                   type = "kaplan-meier")
-
-mfit.2c <- survfit(coxph(Surv(time=EDAD,
-                              time2 = age.ex,
-                              event = event) ~ 1, data = subset(link.may_M, cluster4=="middle abrupt")), data = subset(link.may_M, cluster4=="middle abrupt"),
-                   type = "kaplan-meier")
-
-mfit.2d <- survfit(coxph(Surv(time=EDAD,
-                              time2 = age.ex,
-                              event = event) ~ 1, data = subset(link.may_M, cluster4=="late abrupt")), data = subset(link.may_M, cluster4=="late abrupt"),
-                   type = "kaplan-meier")
-
-KME.Clusta <- tidy(mfit.2a) %>% select(estimate, time) %>% mutate(dis = "early abrupt")
-KME.Clustb <- tidy(mfit.2b) %>% select(estimate, time) %>% mutate(dis = "early gradual")
-KME.Clustc <- tidy(mfit.2c) %>% select(estimate, time) %>% mutate(dis = "middle abrupt")
-KME.Clustd <- tidy(mfit.2d) %>% select(estimate, time) %>% mutate(dis = "late abrupt")
-
-KME.CLustM <- union(KME.Clusta, KME.Clustb) %>% union(KME.Clustc) %>% union(KME.Clustd)
-KME.CLustM %>% ggplot() +
-  geom_step(aes(x=time, y=estimate, color=dis)) +
-  scale_y_continuous(name = "Survival Probability")                  +
-  scale_x_continuous(name = "Age") +
-  scale_colour_manual(values = c("orange", "darkgrey","magenta","darkblue"), name="")     +
-  theme_bw()
+KME1 + facet_grid(. ~ sex) + theme(legend.position = c(0.85, 0.80))
 
 
-# Males second cluster option (time between onset and death)
+# Males first cluster option (time between onset and death)
 # ----------------------------------------------------------
 
+## Males
 # exit time (month/12+year)
 link.may_M <- link.may_M %>% mutate(t.salida = a_salida+(m_salida/12))
 hist(link.may_M$t.salida)
@@ -220,38 +213,48 @@ hist(link.may_M$t.salida)
 link.may_M <- link.may_M %>% mutate(t.entrada = 2006.99 - (EDAD-Edadinicio_cuidado)) # same story with inicio Disca44
 hist(link.may_M$t.entrada)
 
-mfit.3a <- survfit(coxph(Surv(time=t.entrada,
+
+## Females
+# exit time (month/12+year)
+link.may_F <- link.may_F %>% mutate(t.salida = a_salida+(m_salida/12))
+hist(link.may_F$t.salida)
+# entry time (month/12+year) - onset of disability
+link.may_F <- link.may_F %>% mutate(t.entrada = 2006.99 - (EDAD-Edadinicio_cuidado)) # same story with inicio Disca44
+hist(link.may_F$t.entrada)
+
+
+mfit.2a <- survfit(coxph(Surv(time=t.entrada,
                               time2 = t.salida,
-                              event = event) ~ 1, data = subset(link.may_M, cluster4=="early abrupt")), data = subset(link.may_M, cluster4=="early abrupt"),
+                              event = event) ~ 1, data = subset(link.may_M, cluster2=="early onset")), data = subset(link.may_M, cluster2=="early onset"),
                    type = "kaplan-meier")
-mfit.3b <- survfit(coxph(Surv(time=t.entrada,
+mfit.2b <- survfit(coxph(Surv(time=t.entrada,
                               time2 = t.salida,
-                              event = event) ~ 1, data = subset(link.may_M, cluster4=="early gradual")), data = subset(link.may_M, cluster4=="early gradual"),
+                              event = event) ~ 1, data = subset(link.may_M, cluster2=="late onset")), data = subset(link.may_M, cluster2=="late onset"),
                    type = "kaplan-meier")
 
-mfit.3c <- survfit(coxph(Surv(time=t.entrada,
+mfit.2c <- survfit(coxph(Surv(time=t.entrada,
                               time2 = t.salida,
-                              event = event) ~ 1, data = subset(link.may_M, cluster4=="late gradual")), data = subset(link.may_M, cluster4=="late gradual"),
+                              event = event) ~ 1, data = subset(link.may_F, cluster2=="early onset long")), data = subset(link.may_F, cluster2=="early onset long"),
                    type = "kaplan-meier")
 
-mfit.3d <- survfit(coxph(Surv(time=t.entrada,
+mfit.2d <- survfit(coxph(Surv(time=t.entrada,
                               time2 = t.salida,
-                              event = event) ~ 1, data = subset(link.may_M, cluster4=="late abrupt")), data = subset(link.may_M, cluster4=="late abrupt"),
+                              event = event) ~ 1, data = subset(link.may_F, cluster2=="late onset short")), data = subset(link.may_F, cluster2=="late onset short"),
                    type = "kaplan-meier")
 
-KME.Clusta <- tidy(mfit.3a) %>% select(estimate, time) %>% mutate(dis = "early abrupt")
-KME.Clustb <- tidy(mfit.3b) %>% select(estimate, time) %>% mutate(dis = "early gradual")
-KME.Clustc <- tidy(mfit.3c) %>% select(estimate, time) %>% mutate(dis = "late gradual")
-KME.Clustd <- tidy(mfit.3d) %>% select(estimate, time) %>% mutate(dis = "late abrupt")
+KME.Clusta <- tidy(mfit.2a) %>% select(estimate, time) %>% mutate(disab = "early") %>% mutate(sex="male")
+KME.Clustb <- tidy(mfit.2b) %>% select(estimate, time) %>% mutate(disab = "late") %>% mutate(sex="male")
+KME.Clustc <- tidy(mfit.2c) %>% select(estimate, time) %>% mutate(disab = "early") %>% mutate(sex="female")
+KME.Clustd <- tidy(mfit.2d) %>% select(estimate, time) %>% mutate(disab = "late") %>% mutate(sex="female")
 
 KME.CLustM <- union(KME.Clusta, KME.Clustb) %>% union(KME.Clustc) %>% union(KME.Clustd)
-KME.CLustM %>% ggplot() +
-  geom_step(aes(x=time, y=estimate, color=dis)) +
+KME1 <- KME.CLustM %>% ggplot() +
+  geom_step(aes(x=time, y=estimate, color=disab)) +
   scale_y_continuous(name = "Survival Probability")                  +
   scale_x_continuous(name = "Age") +
-  scale_colour_manual(values = c("orange", "darkgrey","magenta","darkblue"), name="")     +
+  scale_colour_manual(values = c("orange", "darkgrey"), name="")     +
   theme_bw()
-
+KME1 + facet_grid(. ~ sex) + theme(legend.position = c(0.85, 0.80))
 
 
 

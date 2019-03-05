@@ -305,7 +305,69 @@ tra_may_C <- tra_may %>% mutate("50" = ifelse(EdadInicioDisca44>=50, "DF", ifels
   mutate("99" = ifelse(EdadInicioDisca44>=99, "DF", ifelse(Edadinicio_cuidado>=99, "ID", ifelse(EDAD>=99,"DC", NA)))) %>% 
   mutate("100" = ifelse(EdadInicioDisca44>=100, "DF", ifelse(Edadinicio_cuidado>=100, "ID", ifelse(EDAD>=100,"DC", NA))))
   
-
+  ### Kindergarten dataframe approach (One Variable for EACH time point) - copy and paste work
+  ### %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% ###
+  
+  ### NEW: Disability Variable
+  ### ------------------------
+  # first taking care of those without A12 disability onset (make it the general)
+  
+  tra_may_12A <- subset(tra_may, !is.na(DISCA13_AGE))
+  
+  tra_may_D13 <- tra_may %>% 
+    # now the hand work
+    mutate("50" = ifelse(DISCA13_AGE>=50, "DF", ifelse(Edadinicio_cuidado>=50, "ID", ifelse(EDAD>=50,"DC", NA)))) %>% 
+    mutate("51" = ifelse(DISCA13_AGE>=51, "DF", ifelse(Edadinicio_cuidado>=51, "ID", ifelse(EDAD>=51,"DC", NA)))) %>% 
+    mutate("52" = ifelse(DISCA13_AGE>=52, "DF", ifelse(Edadinicio_cuidado>=52, "ID", ifelse(EDAD>=52,"DC", NA)))) %>% 
+    mutate("53" = ifelse(DISCA13_AGE>=53, "DF", ifelse(Edadinicio_cuidado>=53, "ID", ifelse(EDAD>=53,"DC", NA)))) %>% 
+    mutate("54" = ifelse(DISCA13_AGE>=54, "DF", ifelse(Edadinicio_cuidado>=54, "ID", ifelse(EDAD>=54,"DC", NA)))) %>% 
+    mutate("55" = ifelse(DISCA13_AGE>=55, "DF", ifelse(Edadinicio_cuidado>=55, "ID", ifelse(EDAD>=55,"DC", NA)))) %>% 
+    mutate("56" = ifelse(DISCA13_AGE>=56, "DF", ifelse(Edadinicio_cuidado>=56, "ID", ifelse(EDAD>=56,"DC", NA)))) %>% 
+    mutate("57" = ifelse(DISCA13_AGE>=57, "DF", ifelse(Edadinicio_cuidado>=57, "ID", ifelse(EDAD>=57,"DC", NA)))) %>% 
+    mutate("58" = ifelse(DISCA13_AGE>=58, "DF", ifelse(Edadinicio_cuidado>=58, "ID", ifelse(EDAD>=58,"DC", NA)))) %>% 
+    mutate("59" = ifelse(DISCA13_AGE>=59, "DF", ifelse(Edadinicio_cuidado>=59, "ID", ifelse(EDAD>=59,"DC", NA)))) %>% 
+    mutate("60" = ifelse(DISCA13_AGE>=60, "DF", ifelse(Edadinicio_cuidado>=60, "ID", ifelse(EDAD>=60,"DC", NA)))) %>% 
+    mutate("61" = ifelse(DISCA13_AGE>=61, "DF", ifelse(Edadinicio_cuidado>=61, "ID", ifelse(EDAD>=61,"DC", NA)))) %>% 
+    mutate("62" = ifelse(DISCA13_AGE>=62, "DF", ifelse(Edadinicio_cuidado>=62, "ID", ifelse(EDAD>=62,"DC", NA)))) %>% 
+    mutate("63" = ifelse(DISCA13_AGE>=63, "DF", ifelse(Edadinicio_cuidado>=63, "ID", ifelse(EDAD>=63,"DC", NA)))) %>% 
+    mutate("64" = ifelse(DISCA13_AGE>=64, "DF", ifelse(Edadinicio_cuidado>=64, "ID", ifelse(EDAD>=64,"DC", NA)))) %>% 
+    mutate("65" = ifelse(DISCA13_AGE>=65, "DF", ifelse(Edadinicio_cuidado>=65, "ID", ifelse(EDAD>=65,"DC", NA)))) %>% 
+    mutate("66" = ifelse(DISCA13_AGE>=66, "DF", ifelse(Edadinicio_cuidado>=66, "ID", ifelse(EDAD>=66,"DC", NA)))) %>% 
+    mutate("67" = ifelse(DISCA13_AGE>=67, "DF", ifelse(Edadinicio_cuidado>=67, "ID", ifelse(EDAD>=67,"DC", NA)))) %>% 
+    mutate("68" = ifelse(DISCA13_AGE>=68, "DF", ifelse(Edadinicio_cuidado>=68, "ID", ifelse(EDAD>=68,"DC", NA)))) %>% 
+    mutate("69" = ifelse(DISCA13_AGE>=69, "DF", ifelse(Edadinicio_cuidado>=69, "ID", ifelse(EDAD>=69,"DC", NA)))) %>% 
+    mutate("70" = ifelse(DISCA13_AGE>=70, "DF", ifelse(Edadinicio_cuidado>=70, "ID", ifelse(EDAD>=70,"DC", NA)))) %>% 
+    mutate("71" = ifelse(DISCA13_AGE>=71, "DF", ifelse(Edadinicio_cuidado>=71, "ID", ifelse(EDAD>=71,"DC", NA)))) %>% 
+    mutate("72" = ifelse(DISCA13_AGE>=72, "DF", ifelse(Edadinicio_cuidado>=72, "ID", ifelse(EDAD>=72,"DC", NA)))) %>% 
+    mutate("73" = ifelse(DISCA13_AGE>=73, "DF", ifelse(Edadinicio_cuidado>=73, "ID", ifelse(EDAD>=73,"DC", NA)))) %>% 
+    mutate("74" = ifelse(DISCA13_AGE>=74, "DF", ifelse(Edadinicio_cuidado>=74, "ID", ifelse(EDAD>=74,"DC", NA)))) %>% 
+    mutate("75" = ifelse(DISCA13_AGE>=75, "DF", ifelse(Edadinicio_cuidado>=75, "ID", ifelse(EDAD>=75,"DC", NA)))) %>% 
+    mutate("76" = ifelse(DISCA13_AGE>=76, "DF", ifelse(Edadinicio_cuidado>=76, "ID", ifelse(EDAD>=76,"DC", NA)))) %>% 
+    mutate("77" = ifelse(DISCA13_AGE>=77, "DF", ifelse(Edadinicio_cuidado>=77, "ID", ifelse(EDAD>=77,"DC", NA)))) %>% 
+    mutate("78" = ifelse(DISCA13_AGE>=78, "DF", ifelse(Edadinicio_cuidado>=78, "ID", ifelse(EDAD>=78,"DC", NA)))) %>% 
+    mutate("79" = ifelse(DISCA13_AGE>=79, "DF", ifelse(Edadinicio_cuidado>=79, "ID", ifelse(EDAD>=79,"DC", NA)))) %>% 
+    mutate("80" = ifelse(DISCA13_AGE>=80, "DF", ifelse(Edadinicio_cuidado>=80, "ID", ifelse(EDAD>=80,"DC", NA)))) %>% 
+    mutate("81" = ifelse(DISCA13_AGE>=81, "DF", ifelse(Edadinicio_cuidado>=81, "ID", ifelse(EDAD>=81,"DC", NA)))) %>% 
+    mutate("82" = ifelse(DISCA13_AGE>=82, "DF", ifelse(Edadinicio_cuidado>=82, "ID", ifelse(EDAD>=82,"DC", NA)))) %>% 
+    mutate("83" = ifelse(DISCA13_AGE>=83, "DF", ifelse(Edadinicio_cuidado>=83, "ID", ifelse(EDAD>=83,"DC", NA)))) %>% 
+    mutate("84" = ifelse(DISCA13_AGE>=84, "DF", ifelse(Edadinicio_cuidado>=84, "ID", ifelse(EDAD>=84,"DC", NA)))) %>% 
+    mutate("85" = ifelse(DISCA13_AGE>=85, "DF", ifelse(Edadinicio_cuidado>=85, "ID", ifelse(EDAD>=85,"DC", NA)))) %>% 
+    mutate("86" = ifelse(DISCA13_AGE>=86, "DF", ifelse(Edadinicio_cuidado>=86, "ID", ifelse(EDAD>=86,"DC", NA)))) %>% 
+    mutate("87" = ifelse(DISCA13_AGE>=87, "DF", ifelse(Edadinicio_cuidado>=87, "ID", ifelse(EDAD>=87,"DC", NA)))) %>% 
+    mutate("88" = ifelse(DISCA13_AGE>=88, "DF", ifelse(Edadinicio_cuidado>=88, "ID", ifelse(EDAD>=88,"DC", NA)))) %>% 
+    mutate("89" = ifelse(DISCA13_AGE>=89, "DF", ifelse(Edadinicio_cuidado>=89, "ID", ifelse(EDAD>=89,"DC", NA)))) %>% 
+    mutate("90" = ifelse(DISCA13_AGE>=90, "DF", ifelse(Edadinicio_cuidado>=90, "ID", ifelse(EDAD>=90,"DC", NA)))) %>% 
+    mutate("91" = ifelse(DISCA13_AGE>=91, "DF", ifelse(Edadinicio_cuidado>=91, "ID", ifelse(EDAD>=91,"DC", NA)))) %>% 
+    mutate("92" = ifelse(DISCA13_AGE>=92, "DF", ifelse(Edadinicio_cuidado>=92, "ID", ifelse(EDAD>=92,"DC", NA)))) %>% 
+    mutate("93" = ifelse(DISCA13_AGE>=93, "DF", ifelse(Edadinicio_cuidado>=93, "ID", ifelse(EDAD>=93,"DC", NA)))) %>% 
+    mutate("94" = ifelse(DISCA13_AGE>=94, "DF", ifelse(Edadinicio_cuidado>=94, "ID", ifelse(EDAD>=94,"DC", NA)))) %>% 
+    mutate("95" = ifelse(DISCA13_AGE>=95, "DF", ifelse(Edadinicio_cuidado>=95, "ID", ifelse(EDAD>=95,"DC", NA)))) %>% 
+    mutate("96" = ifelse(DISCA13_AGE>=96, "DF", ifelse(Edadinicio_cuidado>=96, "ID", ifelse(EDAD>=96,"DC", NA)))) %>% 
+    mutate("97" = ifelse(DISCA13_AGE>=97, "DF", ifelse(Edadinicio_cuidado>=97, "ID", ifelse(EDAD>=97,"DC", NA)))) %>% 
+    mutate("98" = ifelse(DISCA13_AGE>=98, "DF", ifelse(Edadinicio_cuidado>=98, "ID", ifelse(EDAD>=98,"DC", NA)))) %>% 
+    mutate("99" = ifelse(DISCA13_AGE>=99, "DF", ifelse(Edadinicio_cuidado>=99, "ID", ifelse(EDAD>=99,"DC", NA)))) %>% 
+    mutate("100" = ifelse(DISCA13_AGE>=100, "DF", ifelse(Edadinicio_cuidado>=100, "ID", ifelse(EDAD>=100,"DC", NA))))
+  
 
 ### Kindergarten dataframe approach (One Variable for EACH time point)
 
@@ -362,74 +424,13 @@ tra_may_13 <- tra_may %>% mutate("50" = ifelse(DISCA13_AGE>=50, "DF", ifelse(Ent
   mutate("99" = ifelse(DISCA13_AGE>=99, "DF", ifelse(EntryGrave13>=99, "MD", ifelse(Edadinicio_cuidado>=99, "ID", ifelse(EDAD>=99,"DC", NA))))) %>% 
   mutate("100" = ifelse(DISCA13_AGE>=100, "DF", ifelse(EntryGrave13>=100, "MD", ifelse(Edadinicio_cuidado>=100, "ID", ifelse(EDAD>=100,"DC", NA)))))
 
-### Kindergarten dataframe approach (One Variable for EACH time point) - copy and paste work
-### %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% ###
-
-### NEW: Disability Variable
-### ------------------------
-# first taking care of those without A12 disability onset (make it the general)
-tra_may_12A <- subset(tra_may, !is.na(edadiniciodisca12A))
-  
-tra_may_12A <- tra_may_12A %>% 
-  # now the hand work
-  mutate("50" = ifelse(edadiniciodisca12A>=50, "DF", ifelse(Edadinicio_cuidado>=50, "ID", ifelse(EDAD>=50,"DC", NA)))) %>% 
-  mutate("51" = ifelse(edadiniciodisca12A>=51, "DF", ifelse(Edadinicio_cuidado>=51, "ID", ifelse(EDAD>=51,"DC", NA)))) %>% 
-  mutate("52" = ifelse(edadiniciodisca12A>=52, "DF", ifelse(Edadinicio_cuidado>=52, "ID", ifelse(EDAD>=52,"DC", NA)))) %>% 
-  mutate("53" = ifelse(edadiniciodisca12A>=53, "DF", ifelse(Edadinicio_cuidado>=53, "ID", ifelse(EDAD>=53,"DC", NA)))) %>% 
-  mutate("54" = ifelse(edadiniciodisca12A>=54, "DF", ifelse(Edadinicio_cuidado>=54, "ID", ifelse(EDAD>=54,"DC", NA)))) %>% 
-  mutate("55" = ifelse(edadiniciodisca12A>=55, "DF", ifelse(Edadinicio_cuidado>=55, "ID", ifelse(EDAD>=55,"DC", NA)))) %>% 
-  mutate("56" = ifelse(edadiniciodisca12A>=56, "DF", ifelse(Edadinicio_cuidado>=56, "ID", ifelse(EDAD>=56,"DC", NA)))) %>% 
-  mutate("57" = ifelse(edadiniciodisca12A>=57, "DF", ifelse(Edadinicio_cuidado>=57, "ID", ifelse(EDAD>=57,"DC", NA)))) %>% 
-  mutate("58" = ifelse(edadiniciodisca12A>=58, "DF", ifelse(Edadinicio_cuidado>=58, "ID", ifelse(EDAD>=58,"DC", NA)))) %>% 
-  mutate("59" = ifelse(edadiniciodisca12A>=59, "DF", ifelse(Edadinicio_cuidado>=59, "ID", ifelse(EDAD>=59,"DC", NA)))) %>% 
-  mutate("60" = ifelse(edadiniciodisca12A>=60, "DF", ifelse(Edadinicio_cuidado>=60, "ID", ifelse(EDAD>=60,"DC", NA)))) %>% 
-  mutate("61" = ifelse(edadiniciodisca12A>=61, "DF", ifelse(Edadinicio_cuidado>=61, "ID", ifelse(EDAD>=61,"DC", NA)))) %>% 
-  mutate("62" = ifelse(edadiniciodisca12A>=62, "DF", ifelse(Edadinicio_cuidado>=62, "ID", ifelse(EDAD>=62,"DC", NA)))) %>% 
-  mutate("63" = ifelse(edadiniciodisca12A>=63, "DF", ifelse(Edadinicio_cuidado>=63, "ID", ifelse(EDAD>=63,"DC", NA)))) %>% 
-  mutate("64" = ifelse(edadiniciodisca12A>=64, "DF", ifelse(Edadinicio_cuidado>=64, "ID", ifelse(EDAD>=64,"DC", NA)))) %>% 
-  mutate("65" = ifelse(edadiniciodisca12A>=65, "DF", ifelse(Edadinicio_cuidado>=65, "ID", ifelse(EDAD>=65,"DC", NA)))) %>% 
-  mutate("66" = ifelse(edadiniciodisca12A>=66, "DF", ifelse(Edadinicio_cuidado>=66, "ID", ifelse(EDAD>=66,"DC", NA)))) %>% 
-  mutate("67" = ifelse(edadiniciodisca12A>=67, "DF", ifelse(Edadinicio_cuidado>=67, "ID", ifelse(EDAD>=67,"DC", NA)))) %>% 
-  mutate("68" = ifelse(edadiniciodisca12A>=68, "DF", ifelse(Edadinicio_cuidado>=68, "ID", ifelse(EDAD>=68,"DC", NA)))) %>% 
-  mutate("69" = ifelse(edadiniciodisca12A>=69, "DF", ifelse(Edadinicio_cuidado>=69, "ID", ifelse(EDAD>=69,"DC", NA)))) %>% 
-  mutate("70" = ifelse(edadiniciodisca12A>=70, "DF", ifelse(Edadinicio_cuidado>=70, "ID", ifelse(EDAD>=70,"DC", NA)))) %>% 
-  mutate("71" = ifelse(edadiniciodisca12A>=71, "DF", ifelse(Edadinicio_cuidado>=71, "ID", ifelse(EDAD>=71,"DC", NA)))) %>% 
-  mutate("72" = ifelse(edadiniciodisca12A>=72, "DF", ifelse(Edadinicio_cuidado>=72, "ID", ifelse(EDAD>=72,"DC", NA)))) %>% 
-  mutate("73" = ifelse(edadiniciodisca12A>=73, "DF", ifelse(Edadinicio_cuidado>=73, "ID", ifelse(EDAD>=73,"DC", NA)))) %>% 
-  mutate("74" = ifelse(edadiniciodisca12A>=74, "DF", ifelse(Edadinicio_cuidado>=74, "ID", ifelse(EDAD>=74,"DC", NA)))) %>% 
-  mutate("75" = ifelse(edadiniciodisca12A>=75, "DF", ifelse(Edadinicio_cuidado>=75, "ID", ifelse(EDAD>=75,"DC", NA)))) %>% 
-  mutate("76" = ifelse(edadiniciodisca12A>=76, "DF", ifelse(Edadinicio_cuidado>=76, "ID", ifelse(EDAD>=76,"DC", NA)))) %>% 
-  mutate("77" = ifelse(edadiniciodisca12A>=77, "DF", ifelse(Edadinicio_cuidado>=77, "ID", ifelse(EDAD>=77,"DC", NA)))) %>% 
-  mutate("78" = ifelse(edadiniciodisca12A>=78, "DF", ifelse(Edadinicio_cuidado>=78, "ID", ifelse(EDAD>=78,"DC", NA)))) %>% 
-  mutate("79" = ifelse(edadiniciodisca12A>=79, "DF", ifelse(Edadinicio_cuidado>=79, "ID", ifelse(EDAD>=79,"DC", NA)))) %>% 
-  mutate("80" = ifelse(edadiniciodisca12A>=80, "DF", ifelse(Edadinicio_cuidado>=80, "ID", ifelse(EDAD>=80,"DC", NA)))) %>% 
-  mutate("81" = ifelse(edadiniciodisca12A>=81, "DF", ifelse(Edadinicio_cuidado>=81, "ID", ifelse(EDAD>=81,"DC", NA)))) %>% 
-  mutate("82" = ifelse(edadiniciodisca12A>=82, "DF", ifelse(Edadinicio_cuidado>=82, "ID", ifelse(EDAD>=82,"DC", NA)))) %>% 
-  mutate("83" = ifelse(edadiniciodisca12A>=83, "DF", ifelse(Edadinicio_cuidado>=83, "ID", ifelse(EDAD>=83,"DC", NA)))) %>% 
-  mutate("84" = ifelse(edadiniciodisca12A>=84, "DF", ifelse(Edadinicio_cuidado>=84, "ID", ifelse(EDAD>=84,"DC", NA)))) %>% 
-  mutate("85" = ifelse(edadiniciodisca12A>=85, "DF", ifelse(Edadinicio_cuidado>=85, "ID", ifelse(EDAD>=85,"DC", NA)))) %>% 
-  mutate("86" = ifelse(edadiniciodisca12A>=86, "DF", ifelse(Edadinicio_cuidado>=86, "ID", ifelse(EDAD>=86,"DC", NA)))) %>% 
-  mutate("87" = ifelse(edadiniciodisca12A>=87, "DF", ifelse(Edadinicio_cuidado>=87, "ID", ifelse(EDAD>=87,"DC", NA)))) %>% 
-  mutate("88" = ifelse(edadiniciodisca12A>=88, "DF", ifelse(Edadinicio_cuidado>=88, "ID", ifelse(EDAD>=88,"DC", NA)))) %>% 
-  mutate("89" = ifelse(edadiniciodisca12A>=89, "DF", ifelse(Edadinicio_cuidado>=89, "ID", ifelse(EDAD>=89,"DC", NA)))) %>% 
-  mutate("90" = ifelse(edadiniciodisca12A>=90, "DF", ifelse(Edadinicio_cuidado>=90, "ID", ifelse(EDAD>=90,"DC", NA)))) %>% 
-  mutate("91" = ifelse(edadiniciodisca12A>=91, "DF", ifelse(Edadinicio_cuidado>=91, "ID", ifelse(EDAD>=91,"DC", NA)))) %>% 
-  mutate("92" = ifelse(edadiniciodisca12A>=92, "DF", ifelse(Edadinicio_cuidado>=92, "ID", ifelse(EDAD>=92,"DC", NA)))) %>% 
-  mutate("93" = ifelse(edadiniciodisca12A>=93, "DF", ifelse(Edadinicio_cuidado>=93, "ID", ifelse(EDAD>=93,"DC", NA)))) %>% 
-  mutate("94" = ifelse(edadiniciodisca12A>=94, "DF", ifelse(Edadinicio_cuidado>=94, "ID", ifelse(EDAD>=94,"DC", NA)))) %>% 
-  mutate("95" = ifelse(edadiniciodisca12A>=95, "DF", ifelse(Edadinicio_cuidado>=95, "ID", ifelse(EDAD>=95,"DC", NA)))) %>% 
-  mutate("96" = ifelse(edadiniciodisca12A>=96, "DF", ifelse(Edadinicio_cuidado>=96, "ID", ifelse(EDAD>=96,"DC", NA)))) %>% 
-  mutate("97" = ifelse(edadiniciodisca12A>=97, "DF", ifelse(Edadinicio_cuidado>=97, "ID", ifelse(EDAD>=97,"DC", NA)))) %>% 
-  mutate("98" = ifelse(edadiniciodisca12A>=98, "DF", ifelse(Edadinicio_cuidado>=98, "ID", ifelse(EDAD>=98,"DC", NA)))) %>% 
-  mutate("99" = ifelse(edadiniciodisca12A>=99, "DF", ifelse(Edadinicio_cuidado>=99, "ID", ifelse(EDAD>=99,"DC", NA)))) %>% 
-  mutate("100" = ifelse(edadiniciodisca12A>=100, "DF", ifelse(Edadinicio_cuidado>=100, "ID", ifelse(EDAD>=100,"DC", NA))))
 
 ### save data
 
 # save(tra_may, file='datasets/020_traMay.RData')
 # save(tra_may_C, file='datasets/020_traMay_C.RData')
 # save(tra_may_13, file='datasets/020_traMay_13.RData')
-# save(tra_may_12A, file='datasets/020_traMay_12A.RData')
+# save(tra_may_D13, file='datasets/020_traMay_D13.RData')
 
 #### ---------------------------------------------------------------------------------------------------------------- ####
 #### ---------------------------------------------------------------------------------------------------------------- ####
