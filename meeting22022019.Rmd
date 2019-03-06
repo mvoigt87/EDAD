@@ -1,0 +1,370 @@
+---
+title: "Update 06.03.2019"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library(foreign)
+library(survival)
+library(broom)
+library(stargazer)
+library(tidyverse)
+library(data.table)
+# 0.3 Set right working directory
+dir()
+setwd("C:/Users/y4956294S/Documents/LONGPOP/Subproject 2 - SE differences in transition to dependency/R code/EDAD")
+
+# load traminer data to show graphs
+load("datasets/020_traMay_D13.RData")
+tra_may_C_50 <- tra_may_D13 %>% filter(EdadInicioDisca13>=50) %>% filter(Edadinicio_cuidado<100) %>% filter(!is.na(EdadInicioDisca13)) %>% 
+ filter(DISCA13_AGE<100) %>% filter(EdadInicioDisca13 <= EDAD) 
+tra_may_M <- tra_may_C_50 %>% filter(SEXO=="Varón") %>% mutate(SEXO="Male")
+tra_may_F <- tra_may_C_50 %>% filter(SEXO=="Mujer") %>% mutate(SEXO="Female")
+seqmat_M <- tra_may_M[,c(10:60)]
+seqmat_F <- tra_may_F[,c(10:60)]
+
+SeqAlphab_C <- c("DF", "ID", "DC")
+# Define color scheme
+Brewer_C <- brewer.pal(3, "Set1")
+
+# Males
+DisSeq_M <- seqdef(seqmat_M,informat = "STS", alphabet = SeqAlphab_C, id="auto", cpal =  Brewer_C ,start = 55, 
+                   labels = c("Disability Free", "Idependent","Care"))
+
+# Females
+DisSeq_F <- seqdef(seqmat_F,informat = "STS", alphabet = SeqAlphab_C, id="auto", cpal =  Brewer_C ,start = 55, 
+                   labels = c("Disability Free", "Idependent","Care"))
+
+load("datasets/020_traMay_D13M.RData")
+load("datasets/020_traMay_D13F.RData")
+
+# Disca 13 - 50+
+load(file = 'datasets/030_linkmay_M_50ADL.RData')
+load(file = 'datasets/030_linkmay_F_50ADL.RData')
+
+```
+
+# Analysing Sequences to cluster pathways - What is new?
+## Clustering
+There are a dozens of dissimilarity measures to group individual sequences, many of them more precise than classic OM. Refering to [Studer and Ritschard (2016)](https://rss.onlinelibrary.wiley.com/doi/pdf/10.1111/rssa.12125), I chose to use an OM mechanism sensitive to both the spell length and the timing of sequences (OMspell).
+
+
+## Population
+The population used is a little different for two reasons. First, as I discussed with Antonio, I only used individuals with an onset of disability after age 50 to capture exclusively old-age disability. Second, I found some problems in the matching process that led to unreasonable age distribution (Age of onset of disability after age at survey). As I could not fix all the issues and we still expect the updated data, I deleted the rest of the cases listwise. We end up with `r length(link.may_F$Id)` females and `r length(link.may_M$Id)` male individuals.
+
+## Defining Disability
+The onset of disability is defined as age at which the first of the following 13 activities (of daily living) became difficult/was impossible in consequence of a disability or disease.
+
+1. Changing the body posture
+1. Walking and moving inside the house
+1. Walking and moving outside
+1. Sitting down and using public transport
+1. Wash and dry different body parts
+1. Basic hygene
+1. Urination
+1. Going to the toilet
+1. To dress and undress
+1. Eating and drinking
+1. Shopping (groceries)
+1. Preparing food/cooking
+1. Household task (cleaning the house)
+
+# Analysis of mortality and survival
+## Descriptive
+Since the optimal group/cluster size in all analyses of sequences (choosing different disability indicators) was **two**, we pre-defined two distinct pathways for each sex. See the graphs for men (first graph) and women (second graph).
+```{r cluster males, echo=FALSE}
+# males 2 and 4 groups
+seqdplot(DisSeq_M, group=tra_may_M$cluster2)
+seqdplot(DisSeq_F, group=tra_may_F$cluster2)
+```
+The bars in the following graphs represent mean time in each state by cluster. To keep the same order, men first and then females.
+```{r meantime males, echo=FALSE}
+# males 2 and 4 groups
+seqmtplot(DisSeq_M, group=tra_may_M$cluster2)
+seqmtplot(DisSeq_F, group=tra_may_F$cluster2)
+```
+
+The following tables are median at death and mean ages at death the men and women separated.
+```{r agedeath, echo=FALSE}
+# males 2 clusters
+link.may_M %>% group_by(cluster2) %>% summarize(mean=mean(age.ex[event==1]), median=median(age.ex[event==1]))
+# females 2 cluster
+link.may_F %>% group_by(cluster2) %>% summarize(mean=mean(age.ex[event==1]), median=median(age.ex[event==1]))
+```
+Purely looking at relative distributions, these are durations spent in disability (according to our definition) for all individuals grouped by those who experience the event and those who didn´t.
+```{r disdis, echo=FALSE}
+# Males
+link.may_M <- link.may_M %>% mutate(dur_dis = round(age.ex,0)-round(EdadInicioDisca13,0))
+# hist(link.may_M$dur_dis)
+summary(link.may_M$dur_dis)
+# event distribution by duration in disability
+# --------------------------------------------
+DUR_Plot_M <- link.may_M %>% mutate(event = as.factor(event)) %>% 
+  ggplot(aes(x=dur_dis, fill=event)) +
+  geom_histogram(aes(y=0.5*..density..), binwidth=0.5) +
+  scale_x_continuous(name = "Duration in Disability (Years)") +
+  scale_y_continuous(name = "Relative Frequency",labels = scales::percent) +
+  scale_fill_manual(name = "", values=c("#000000", "#A9A9A9"), labels = c("Survivors", "Deceased")) +
+  theme_bw()
+DUR_Plot_M <- DUR_Plot_M + theme(legend.position = c(0.85, 0.80)) + 
+  theme(axis.text=element_text(size=12), axis.title=element_text(size=12,face="bold"))
+ 
+DUR_Plot_M
+                                                                          
+link.may_F <- link.may_F %>% mutate(dur_dis = round(age.ex,0)-round(EdadInicioDisca13,0))
+# hist(link.may_F$dur_dis)
+summary(link.may_F$dur_dis)
+
+# event distribution by duration in disability
+# --------------------------------------------
+DUR_Plot_F <- link.may_F %>% mutate(event = as.factor(event)) %>% 
+  ggplot(aes(x=dur_dis, fill=event)) +
+  geom_histogram(aes(y=0.5*..density..), binwidth=0.5) +
+  scale_x_continuous(name = "Duration in Disability (Years)") +
+  scale_y_continuous(name = "Relative Frequency",labels = scales::percent) +
+  scale_fill_manual(name = "", values=c("#000000", "#A9A9A9"), labels = c("Survivors", "Deceased")) +
+  theme_bw()
+DUR_Plot_F <- DUR_Plot_F + theme(legend.position = c(0.85, 0.80)) + theme(axis.text=element_text(size=12),        axis.title=element_text(size=12,face="bold"))
+
+DUR_Plot_F
+```
+
+## KME Plots
+
+# Age as time axis
+Here we will have an important discussion point. As expected, individuals with a late onset of disability have higher survival probabilities at every single age. Interesting is the difference between men and women (area between the two graphs).
+However, these kind of KME don´t make much sense as the curves don´t start at the same point in time and with a risk score lower than 1.
+
+```{r KME1, echo=FALSE}
+mfit.1a <- survfit(coxph(Surv(time=EDAD,
+                              time2 = age.ex,
+                              event = event) ~ 1, data = subset(link.may_M, cluster2=="early onset")), data = subset(link.may_M, cluster2=="early onset"),
+                   type = "kaplan-meier")
+mfit.1b <- survfit(coxph(Surv(time=EDAD,
+                              time2 = age.ex,
+                              event = event) ~ 1, data = subset(link.may_M, cluster2=="late onset")), data = subset(link.may_M, cluster2=="late onset"),
+                   type = "kaplan-meier")
+
+mfit.1c <- survfit(coxph(Surv(time=EDAD,
+                              time2 = age.ex,
+                              event = event) ~ 1, data = subset(link.may_F, cluster2=="early onset long")), data = subset(link.may_F, cluster2=="early onset long"),
+                   type = "kaplan-meier")
+
+mfit.1d <- survfit(coxph(Surv(time=EDAD,
+                              time2 = age.ex,
+                              event = event) ~ 1, data = subset(link.may_F, cluster2=="late onset short")), data = subset(link.may_F, cluster2=="late onset short"),
+                   type = "kaplan-meier")
+
+KME.Clusta <- tidy(mfit.1a) %>% select(estimate, time) %>% mutate(disab = "early") %>% mutate(sex="male")
+KME.Clustb <- tidy(mfit.1b) %>% select(estimate, time) %>% mutate(disab = "late") %>% mutate(sex="male")
+KME.Clustc <- tidy(mfit.1c) %>% select(estimate, time) %>% mutate(disab = "early") %>% mutate(sex="female")
+KME.Clustd <- tidy(mfit.1d) %>% select(estimate, time) %>% mutate(disab = "late") %>% mutate(sex="female")
+
+KME.CLustM <- union(KME.Clusta, KME.Clustb) %>% union(KME.Clustc) %>% union(KME.Clustd)
+KME1 <- KME.CLustM %>% ggplot() +
+  geom_step(aes(x=time, y=estimate, color=disab)) +
+  scale_y_continuous(name = "Survival Probability")                  +
+  scale_x_continuous(name = "Age") +
+  scale_colour_manual(values = c("orange", "darkgrey"), name="")     +
+  theme_bw()
+KME1 + facet_grid(. ~ sex) + theme(legend.position = c(0.85, 0.80)) + theme(axis.text=element_text(size=12),        axis.title=element_text(size=12,face="bold"))
+```
+
+Here just for men, the option with more than 2 groups.
+```{r KME2, echo=FALSE}
+
+## Males
+# exit time (month/12+year)
+link.may_M <- link.may_M %>% mutate(t.salida = (a_salida+(m_salida/12)) - 2006.99)
+hist(link.may_M$t.salida)
+# entry time (month/12+year) - onset of disability
+# link.may_M <- link.may_M %>% mutate(t.entrada =  (EDAD-DISCA13_AGE)) # same story with inicio Disca44
+# hist(link.may_M$t.entrada)
+
+
+## Females
+# exit time (month/12+year)
+link.may_F <- link.may_F %>% mutate(t.salida = (a_salida+(m_salida/12)) - 2006.99)
+hist(link.may_F$t.salida)
+# entry time (month/12+year) - onset of disability
+# link.may_F <- link.may_F %>% mutate(t.entrada = (EDAD-DISCA13_AGE)) # same story with inicio Disca44
+# hist(link.may_F$t.entrada)
+
+
+mfit.2a <- survfit(coxph(Surv(time = t.salida,
+                              event = event) ~ 1, data = subset(link.may_M, cluster2=="early onset")), data = subset(link.may_M, cluster2=="early onset"),
+                   type = "kaplan-meier")
+mfit.2b <- survfit(coxph(Surv(time=t.salida,
+                              event = event) ~ 1, data = subset(link.may_M, cluster2=="late onset")), data = subset(link.may_M, cluster2=="late onset"),
+                   type = "kaplan-meier")
+
+mfit.2c <- survfit(coxph(Surv(time= t.salida,
+                              event = event) ~ 1, data = subset(link.may_F, cluster2=="early onset long")), data = subset(link.may_F, cluster2=="early onset long"),
+                   type = "kaplan-meier")
+
+mfit.2d <- survfit(coxph(Surv(time= t.salida,
+                              event = event) ~ 1, data = subset(link.may_F, cluster2=="late onset short")), data = subset(link.may_F, cluster2=="late onset short"),
+                   type = "kaplan-meier")
+
+KME.Clusta <- tidy(mfit.2a) %>% select(estimate, time) %>% mutate(disab = "early") %>% mutate(sex="male")
+KME.Clustb <- tidy(mfit.2b) %>% select(estimate, time) %>% mutate(disab = "late") %>% mutate(sex="male")
+KME.Clustc <- tidy(mfit.2c) %>% select(estimate, time) %>% mutate(disab = "early") %>% mutate(sex="female")
+KME.Clustd <- tidy(mfit.2d) %>% select(estimate, time) %>% mutate(disab = "late") %>% mutate(sex="female")
+
+KME.CLustM <- union(KME.Clusta, KME.Clustb) %>% union(KME.Clustc) %>% union(KME.Clustd)
+KME2 <- KME.CLustM %>% ggplot() +
+  geom_step(aes(x=time, y=estimate, color=disab)) +
+  scale_y_continuous(name = "Survival Probability")                  +
+  scale_x_continuous(name = "Years since survey") +
+  scale_colour_manual(values = c("orange", "darkgrey"), name="")     +
+  theme_bw()
+KME2 + facet_grid(. ~ sex) + theme(legend.position = c(0.85, 0.80)) + theme(axis.text=element_text(size=12),        axis.title=element_text(size=12,face="bold"))
+
+```
+
+
+## Regression
+Due to time pressure, I used Cox PH models to estimate covariate effects on survival. We can discuss using a parametric model (might be more accurate for adult mortality, might be not).
+
+```{r COX1, echo=FALSE}
+###############################
+### Exploratory Cox Regression
+###############################
+
+# Preliminary step: Change Reference Category and Category names
+link.may_M$cluster2 <- as.factor(link.may_M$cluster2)
+link.may_M <- within(link.may_M, cluster2 <- relevel(cluster2, ref = "late onset"))  
+link.may_F$cluster2 <- as.factor(link.may_F$cluster2)
+link.may_F <- within(link.may_F, cluster2 <- relevel(cluster2, ref = "late onset"))  
+
+link.may_M$cluster4 <- as.factor(link.may_M$cluster4)
+link.may_M <- within(link.may_M, cluster4 <- relevel(cluster4, ref = "late abrupt"))  
+link.may_F$cluster3 <- as.factor(link.may_F$cluster3)
+link.may_F <- within(link.may_F, cluster3 <- relevel(cluster3, ref = "late abrupt"))  
+
+link.may_M <- within(link.may_M, Education <- relevel(Education, ref = "High"))  
+link.may_F <- within(link.may_F, Education <- relevel(Education, ref = "High"))  
+
+link.may_M <- within(link.may_M, Income <- relevel(Income, ref = "625+ eur"))  
+link.may_F <- within(link.may_F, Income <- relevel(Income, ref = "625+ eur"))  
+
+# Just the transitions
+# males
+Cox.CFP.a <- coxph(Surv(time=EDAD,
+                        time2=age.ex,
+                        event=event) ~ cluster2, 
+                   data=subset(link.may_M))
+
+Cox.CFP.a
+
+# females
+Cox.CFP.b <- coxph(Surv(time=EDAD,
+                        time2=age.ex,
+                        event=event) ~ cluster2, 
+                   data=subset(link.may_F))
+
+Cox.CFP.b
+```
+
+Now the model results with calender time as time axis (entry= Onset year of care).
+
+```{r COX2, echo=FALSE}
+# exit time (month/12+year)
+link.may_M <- link.may_M %>% mutate(t.salida = a_salida+(m_salida/12))
+#hist(link.may_F$t.salida)
+# entry time (month/12+year) - onset of disability
+link.may_M <- link.may_M %>% mutate(t.entrada = 2006.99 - (EDAD-Edadinicio_cuidado)) # same story with inicio Disca44
+
+# males
+Cox.CFP.a <- coxph(Surv(time=t.entrada,
+                        time2=t.salida,
+                        event=event) ~ cluster2, 
+                   data=subset(link.may_M))
+
+Cox.CFP.a
+
+# females
+Cox.CFP.b <- coxph(Surv(time=t.entrada,
+                        time2=t.salida,
+                        event=event) ~ cluster2, 
+                   data=subset(link.may_F))
+
+Cox.CFP.b
+
+
+
+```
+
+And here the models with the bigger groups:
+
+```{r COX3, echo=FALSE}
+
+# males
+Cox.CFP.a <- coxph(Surv(time=t.entrada,
+                        time2=t.salida,
+                        event=event) ~ cluster4, 
+                   data=subset(link.may_M))
+
+Cox.CFP.a
+
+# females
+Cox.CFP.b <- coxph(Surv(time=t.entrada,
+                        time2=t.salida,
+                        event=event) ~ cluster3, 
+                   data=subset(link.may_F))
+
+Cox.CFP.b
+```
+
+After this overview about how the pathways describe survival in the preliminary models, here with two covariates:
+
+```{r COX4, echo=FALSE}
+# Plus SES variables
+
+# males
+Cox.CFP.e <- coxph(Surv(time=t.entrada,
+                    time2=t.salida,
+                    event=event) ~ cluster2 + Education + Income + EDAD,
+                 data=subset(link.may_M))
+
+Cox.CFP.e
+
+# females
+Cox.CFP.f <- coxph(Surv(time=t.entrada,
+                    time2=t.salida,
+                    event=event) ~ cluster2 + Education + Income + EDAD,
+                 data=subset(link.may_F))
+
+Cox.CFP.f
+```
+
+And the, for now, most complete model (information-wise):
+
+```{r COX5, echo=FALSE}
+# Plus SES variables
+
+# males
+Cox.CFP.e <- coxph(Surv(time=t.entrada,
+                    time2=t.salida,
+                    event=event) ~ cluster4 + Education + Income + EDAD,
+                 data=subset(link.may_M))
+
+summary(Cox.CFP.e)
+
+# females
+Cox.CFP.f <- coxph(Surv(time=t.entrada,
+                    time2=t.salida,
+                    event=event) ~ cluster3 + Education + Income + EDAD,
+                 data=subset(link.may_F))
+
+summary(Cox.CFP.f)
+```
+
+# Still in Progress (Future Work)
+
+1. Choice of the onset of the pathway - Focus on functional limitation or any disability after age 50?
+1. Find the right model - Could be Cox could be a parametric model
+1. Clarify the purpose of the analysis
+1. Continue with Literature Review - sources about disability in Spain (?)
+1. Write everything up - Deadline: 22.03.2019 (1 month)

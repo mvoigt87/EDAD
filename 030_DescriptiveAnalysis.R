@@ -199,7 +199,7 @@ KME1 <- KME.CLustM %>% ggplot() +
   scale_x_continuous(name = "Age") +
   scale_colour_manual(values = c("orange", "darkgrey"), name="")     +
   theme_bw()
-KME1 + facet_grid(. ~ sex) + theme(legend.position = c(0.85, 0.80))
+KME1 + facet_grid(. ~ sex) + theme(legend.position = c(0.85, 0.80)) + theme(axis.text=element_text(size=12), axis.title=element_text(size=12,face="bold"))
 
 
 # Males first cluster option (time between onset and death)
@@ -207,38 +207,34 @@ KME1 + facet_grid(. ~ sex) + theme(legend.position = c(0.85, 0.80))
 
 ## Males
 # exit time (month/12+year)
-link.may_M <- link.may_M %>% mutate(t.salida = a_salida+(m_salida/12))
+link.may_M <- link.may_M %>% mutate(t.salida = (a_salida+(m_salida/12)) - 2006.99)
 hist(link.may_M$t.salida)
 # entry time (month/12+year) - onset of disability
-link.may_M <- link.may_M %>% mutate(t.entrada = 2006.99 - (EDAD-Edadinicio_cuidado)) # same story with inicio Disca44
-hist(link.may_M$t.entrada)
+# link.may_M <- link.may_M %>% mutate(t.entrada =  (EDAD-DISCA13_AGE)) # same story with inicio Disca44
+# hist(link.may_M$t.entrada)
 
 
 ## Females
 # exit time (month/12+year)
-link.may_F <- link.may_F %>% mutate(t.salida = a_salida+(m_salida/12))
+link.may_F <- link.may_F %>% mutate(t.salida = (a_salida+(m_salida/12)) - 2006.99)
 hist(link.may_F$t.salida)
 # entry time (month/12+year) - onset of disability
-link.may_F <- link.may_F %>% mutate(t.entrada = 2006.99 - (EDAD-Edadinicio_cuidado)) # same story with inicio Disca44
-hist(link.may_F$t.entrada)
+# link.may_F <- link.may_F %>% mutate(t.entrada = (EDAD-DISCA13_AGE)) # same story with inicio Disca44
+# hist(link.may_F$t.entrada)
 
 
-mfit.2a <- survfit(coxph(Surv(time=t.entrada,
-                              time2 = t.salida,
+mfit.2a <- survfit(coxph(Surv(time = t.salida,
                               event = event) ~ 1, data = subset(link.may_M, cluster2=="early onset")), data = subset(link.may_M, cluster2=="early onset"),
                    type = "kaplan-meier")
-mfit.2b <- survfit(coxph(Surv(time=t.entrada,
-                              time2 = t.salida,
+mfit.2b <- survfit(coxph(Surv(time=t.salida,
                               event = event) ~ 1, data = subset(link.may_M, cluster2=="late onset")), data = subset(link.may_M, cluster2=="late onset"),
                    type = "kaplan-meier")
 
-mfit.2c <- survfit(coxph(Surv(time=t.entrada,
-                              time2 = t.salida,
+mfit.2c <- survfit(coxph(Surv(time= t.salida,
                               event = event) ~ 1, data = subset(link.may_F, cluster2=="early onset long")), data = subset(link.may_F, cluster2=="early onset long"),
                    type = "kaplan-meier")
 
-mfit.2d <- survfit(coxph(Surv(time=t.entrada,
-                              time2 = t.salida,
+mfit.2d <- survfit(coxph(Surv(time= t.salida,
                               event = event) ~ 1, data = subset(link.may_F, cluster2=="late onset short")), data = subset(link.may_F, cluster2=="late onset short"),
                    type = "kaplan-meier")
 
@@ -251,10 +247,10 @@ KME.CLustM <- union(KME.Clusta, KME.Clustb) %>% union(KME.Clustc) %>% union(KME.
 KME1 <- KME.CLustM %>% ggplot() +
   geom_step(aes(x=time, y=estimate, color=disab)) +
   scale_y_continuous(name = "Survival Probability")                  +
-  scale_x_continuous(name = "Age") +
+  scale_x_continuous(name = "Years since survey") +
   scale_colour_manual(values = c("orange", "darkgrey"), name="")     +
   theme_bw()
-KME1 + facet_grid(. ~ sex) + theme(legend.position = c(0.85, 0.80))
+KME1 + facet_grid(. ~ sex) + theme(legend.position = c(0.85, 0.80)) + theme(axis.text=element_text(size=12), axis.title=element_text(size=12,face="bold"))
 
 
 

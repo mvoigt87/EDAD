@@ -385,3 +385,6 @@ link.may_F <- link.may_F %>% left_join(tra_may_F, by="Id")
 
 # save(link.may_M, file='datasets/030_linkmay_M_50ADL.RData')
 # save(link.may_F, file='datasets/030_linkmay_F_50ADL.RData')
+
+# save(tra_may_M, file='datasets/020_traMay_D13M.RData')
+# save(tra_may_F, file='datasets/020_traMay_D13F.RData')
