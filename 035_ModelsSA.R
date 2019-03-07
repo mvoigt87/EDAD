@@ -22,18 +22,86 @@ setwd("C:/Users/y4956294S/Documents/LONGPOP/Subproject 2 - SE differences in tra
 
 # prepared datasets (see R file 025_CleanCluster)
 
-# A 12 data
-load(file = '030_linkmay_M_12A.RData')
-load(file = '030_linkmay_F_12A.RData')
-
-link.may_M2 <- link.may_M
-link.may_F2 <- link.may_F
-
 # Disca 44 file
-load(file = 'datasets/030_linkmay_M.RData')
-load(file = 'datasets/030_linkmay_F.RData')
+# load(file = 'datasets/030_linkmay_M.RData')
+# load(file = 'datasets/030_linkmay_F.RData')
+
+# A 12 data
+# load(file = '030_linkmay_M_12A.RData')
+# load(file = '030_linkmay_F_12A.RData')
+
+# link.may_M2 <- link.may_M
+# link.may_F2 <- link.may_F
+
+# D 13 Data
+load(file = 'datasets/030_linkmay_M_50ADL.RData')
+load(file = 'datasets/030_linkmay_F_50ADL.RData')
 
 
+#### 1. Change categories and referecnces
+
+
+table(link.may_M$education)
+table(link.may_F$education)
+
+# make them factors
+link.may_M$education <- as.factor(link.may_M$education)
+link.may_F$education <- as.factor(link.may_F$education)
+# change the reference category
+link.may_M <- within(link.may_M, education <- relevel(education, ref = "Secondary Educ or higher")) 
+link.may_F <- within(link.may_F, education <- relevel(education, ref = "Secondary Educ or higher")) 
+
+
+table(link.may_M$civil)
+table(link.may_F$civil)
+
+# make them factors
+link.may_M$civil <- as.factor(link.may_M$civil)
+link.may_F$civil <- as.factor(link.may_F$civil)
+# change the reference category
+link.may_M <- within(link.may_M, civil <- relevel(civil, ref = "Married")) 
+link.may_F <- within(link.may_F, civil <- relevel(civil, ref = "Married")) 
+
+
+table(link.may_M$work)
+table(link.may_F$work)
+
+# make them factors
+link.may_M$work <- as.factor(link.may_M$work)
+link.may_F$work <- as.factor(link.may_F$work)
+# change the reference category
+link.may_M <- within(link.may_M, work <- relevel(work, ref = "Self-employed")) 
+link.may_F <- within(link.may_F, work <- relevel(work, ref = "self-employed")) 
+
+
+table(link.may_M$CP)
+table(link.may_F$CP)
+class(link.may_M$CP)
+
+# make them factors
+link.may_M$CP <- as.factor(link.may_M$CP)
+link.may_F$CP <- as.factor(link.may_F$CP)
+
+# change the reference category
+link.may_M <- within(link.may_M, CP <- relevel(CP, ref = "Lives with Partner")) 
+link.may_F <- within(link.may_F, CP <- relevel(CP, ref = "Lives with Partner")) 
+
+
+## Age groups
+table(link.may_M$edad5Suecia)
+table(link.may_F$edad5Suecia)
+
+link.may_M <- link.may_M %>% mutate(age.gr = as.factor(ifelse(edad5Suecia == "45-64","45-64",
+                                             ifelse(edad5Suecia ==  "65-80", "65-80", "81+"))))
+
+link.may_F <- link.may_F %>% mutate(age.gr = as.factor(ifelse(edad5Suecia == "45-64","45-64",
+                                                              ifelse(edad5Suecia ==  "65-80", "65-80", "81+"))))
+
+# change the reference category
+link.may_M <- within(link.may_M, age.gr <- relevel(age.gr, ref = "45-64")) 
+link.may_F <- within(link.may_F, age.gr <- relevel(age.gr, ref = "45-64")) 
+
+#link.may <- within(link.may, Income <- relevel(Income, ref = "625+ eur"))  
 
 
 
@@ -41,74 +109,148 @@ load(file = 'datasets/030_linkmay_F.RData')
 ### Exploratory Cox Regression
 ###############################
 
-# Preliminary step: Change Reference Category and Category names
-link.may$group.d.d <- as.factor(link.may$group.d.d)
-link.may <- within(link.may, group.d.d <- relevel(group.d.d, ref = "gradual"))  
-link.may$Sex <- as.factor(link.may$Sex)
-link.may <- within(link.may, Sex <- relevel(Sex, ref = "Female"))  
-link.may <- within(link.may, Education <- relevel(Education, ref = "High"))  
-link.may <- within(link.may, Income <- relevel(Income, ref = "625+ eur"))  
 
 
 
+## Males
+## -----
+
+# exit time as time in years (month/12+year)
+link.may_M <- link.may_M %>% mutate(t.salida = (a_salida+(m_salida/12)) - 2006.99)
+hist(link.may_M$t.salida)
+
+# entry time (month/12+year) - onset of disability
+link.may_M <- link.may_M %>% mutate(t.entrada.dis =  2006.99 - (EDAD-DISCA13_AGE)) # same story with inicio Disca44
+link.may_M <- link.may_M %>% mutate(t.salida.dis = (a_salida+(m_salida/12)))
+
+# entry time (month/12+year) - onset of dependency
+link.may_M <- link.may_M %>% mutate(t.entrada.dep =  2006.99 - (EDAD-Edadinicio_cuidado)) 
+
+
+
+## Females
+## -------
 
 # exit time (month/12+year)
-link.may_M <- link.may_M %>% mutate(t.salida = a_salida+(m_salida/12))
-#hist(link.may_F$t.salida)
+link.may_F <- link.may_F %>% mutate(t.salida = (a_salida+(m_salida/12)) - 2006.99)
+hist(link.may_F$t.salida)
+
+
 # entry time (month/12+year) - onset of disability
-link.may_M <- link.may_M %>% mutate(t.entrada = 2006.99 - (EDAD-Edadinicio_cuidado)) # same story with inicio Disca44
+link.may_F <- link.may_F %>% mutate(t.entrada.dis =  2006.99 - (EDAD-DISCA13_AGE)) # same story with inicio Disca44
+link.may_F <- link.may_F %>% mutate(t.salida.dis = (a_salida+(m_salida/12)))
 
-# exit time (month/12+year)
-link.may_F <- link.may_F %>% mutate(t.salida = a_salida+(m_salida/12))
-#hist(link.may_F$t.salida)
-# entry time (month/12+year) - onset of disability
-link.may_F <- link.may_F %>% mutate(t.entrada = 2006.99 - (EDAD-Edadinicio_cuidado)) # same story with inicio Disca44
+# entry time (month/12+year) - onset of dependency
+link.may_F <- link.may_F %>% mutate(t.entrada.dep =  2006.99 - (EDAD-Edadinicio_cuidado)) 
 
 
-# males
-Cox.CFP.a <- coxph(Surv(time=t.entrada,
-                        time2=t.salida,
-                        event=event) ~ cluster2, 
+#### 2. Cox Models
+#### -------------
+
+## Males - time since EDAD
+
+Cox.CFP.a <- coxph(Surv(time=t.salida,
+                        event=event) ~ cluster2 + EDAD, 
                    data=subset(link.may_M))
 
 Cox.CFP.a
 
-# females
-Cox.CFP.b <- coxph(Surv(time=t.entrada,
-                        time2=t.salida,
-                        event=event) ~ cluster2, 
+Cox.CFP.a2 <- coxph(Surv(time=t.salida,
+                        event=event) ~ cluster2 + age.gr, 
+                   data=subset(link.may_M))
+
+summary(Cox.CFP.a2)
+
+## Females - Time since EDAD
+
+Cox.CFP.b <- coxph(Surv(time=t.salida,
+                        event=event) ~ cluster2 + EDAD, 
                    data=subset(link.may_F))
 
 Cox.CFP.b
 
 
-
-
-
-# Plus SES variables
-
-# males
-Cox.CFP.e <- coxph(Surv(time=t.entrada,
-                        time2=t.salida,
-                        event=event) ~ cluster2 + Education + Income + EDAD,
-                   data=subset(link.may_M))
-
-Cox.CFP.e
-
-# females
-Cox.CFP.f <- coxph(Surv(time=t.entrada,
-                        time2=t.salida,
-                        event=event) ~ cluster2 + Education + Income + EDAD,
+Cox.CFP.b2 <- coxph(Surv(time=t.salida,
+                        event=event) ~ cluster2 + age.gr, 
                    data=subset(link.may_F))
 
-Cox.CFP.f
+summary(Cox.CFP.b2)
+
+
+# Plus SES variables Time since EDDA
+
+# males
+Cox.CFP.e <- coxph(Surv(time=t.salida,
+                        event=event) ~ cluster2 + age.gr + education + CP + civil,
+                   data=subset(link.may_M))
+
+summary(Cox.CFP.e)
+
+# females
+Cox.CFP.f <- coxph(Surv(time=t.salida,
+                         event=event) ~ cluster2 + age.gr + education + CP + civil,
+                   data=subset(link.may_F))
+
+summary(Cox.CFP.f)
+
+
+
+
+
+#### Age at onset of Dependency
+
+## Males
+
+Cox.CFP.a <- coxph(Surv(time=EDAD,
+                        time2 = age.ex,
+                        event=event) ~ cluster2, 
+                   data=subset(link.may_M))
+summary(Cox.CFP.a)
+
+
+## Females
+
+Cox.CFP.b <- coxph(Surv(time=EDAD,
+                        time2 = age.ex,
+                        event=event) ~ cluster2, 
+                   data=subset(link.may_F))
+summary(Cox.CFP.b)
+
+
+# Plus SES variables Age since onset
+
+# males
+Cox.CFP.e <- coxph(Surv(time=EDAD,
+                        time2 = age.ex,
+                        event=event) ~  cluster2 + education + CP + civil,
+                   data=subset(link.may_M))
+
+summary(Cox.CFP.e)
+
+# females
+Cox.CFP.f <- coxph(Surv(time=EDAD,
+                        time2 = age.ex,
+                        event=event) ~ cluster2 + education + CP + civil,
+                   data=subset(link.may_F))
+
+summary(Cox.CFP.f)
 
 
 
 
 
 
-# BIGGER CLUSTERS
+
+
+
+
+
+
+
+
+
+
+# Additional variables
 
 # males
 Cox.CFP.e <- coxph(Surv(time=t.entrada,
@@ -130,6 +272,7 @@ summary(Cox.CFP.f)
 
 
 # Just the transitions
+
 Cox.CFP.a <- coxph(Surv(time=EDAD,
                         time2=age.ex,
                         event=event) ~ group.d.d, 

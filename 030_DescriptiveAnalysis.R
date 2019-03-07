@@ -1,4 +1,4 @@
-♠########################################################
+########################################################
 ##### Analysis of mortality differences by pathway #####
 ########################################################
 
@@ -42,7 +42,7 @@ setwd("C:/Users/y4956294S/Documents/LONGPOP/Subproject 2 - SE differences in tra
 # link.may_M3 <- link.may_M
 # link.may_F3 <- link.may_F
 
-# A 12 data
+# D 13 Data
 load(file = 'datasets/030_linkmay_M_50ADL.RData')
 load(file = 'datasets/030_linkmay_F_50ADL.RData')
 
@@ -161,6 +161,42 @@ DUR_Plot_F <- DUR_Plot_F + theme(legend.position = c(0.85, 0.80)) + theme(axis.t
 ##### 3. Bi-variate Survival Analysis (KMEs)
 ##### %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+# Create additional entry and exit variables
+
+### Since we do not observe deaths before the EDAD survey, it doesn´t make sense to 
+
+## Males
+## -----
+
+# exit time as time in years (month/12+year)
+link.may_M <- link.may_M %>% mutate(t.salida = (a_salida+(m_salida/12)) - 2006.99)
+hist(link.may_M$t.salida)
+
+# entry time (month/12+year) - onset of disability
+link.may_M <- link.may_M %>% mutate(t.entrada.dis =  2006.99 - (EDAD-DISCA13_AGE)) # same story with inicio Disca44
+link.may_M <- link.may_M %>% mutate(t.salida.dis = (a_salida+(m_salida/12)))
+
+# entry time (month/12+year) - onset of dependency
+link.may_M <- link.may_M %>% mutate(t.entrada.dep =  2006.99 - (EDAD-Edadinicio_cuidado)) 
+
+
+
+## Females
+## -------
+
+# exit time (month/12+year)
+link.may_F <- link.may_F %>% mutate(t.salida = (a_salida+(m_salida/12)) - 2006.99)
+hist(link.may_F$t.salida)
+
+
+# entry time (month/12+year) - onset of disability
+link.may_F <- link.may_F %>% mutate(t.entrada.dis =  2006.99 - (EDAD-DISCA13_AGE)) # same story with inicio Disca44
+link.may_F <- link.may_F %>% mutate(t.salida.dis = (a_salida+(m_salida/12)))
+
+# entry time (month/12+year) - onset of dependency
+link.may_F <- link.may_F %>% mutate(t.entrada.dep =  2006.99 - (EDAD-Edadinicio_cuidado)) 
+
+
 ####### %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% ########
 ####### !!! Change the number after "clustering$cluster" depending on the optimal group/cluster size ########
 ####### %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% ########
@@ -205,22 +241,6 @@ KME1 + facet_grid(. ~ sex) + theme(legend.position = c(0.85, 0.80)) + theme(axis
 # Males first cluster option (time between onset and death)
 # ----------------------------------------------------------
 
-## Males
-# exit time (month/12+year)
-link.may_M <- link.may_M %>% mutate(t.salida = (a_salida+(m_salida/12)) - 2006.99)
-hist(link.may_M$t.salida)
-# entry time (month/12+year) - onset of disability
-# link.may_M <- link.may_M %>% mutate(t.entrada =  (EDAD-DISCA13_AGE)) # same story with inicio Disca44
-# hist(link.may_M$t.entrada)
-
-
-## Females
-# exit time (month/12+year)
-link.may_F <- link.may_F %>% mutate(t.salida = (a_salida+(m_salida/12)) - 2006.99)
-hist(link.may_F$t.salida)
-# entry time (month/12+year) - onset of disability
-# link.may_F <- link.may_F %>% mutate(t.entrada = (EDAD-DISCA13_AGE)) # same story with inicio Disca44
-# hist(link.may_F$t.entrada)
 
 
 mfit.2a <- survfit(coxph(Surv(time = t.salida,
@@ -253,41 +273,51 @@ KME1 <- KME.CLustM %>% ggplot() +
 KME1 + facet_grid(. ~ sex) + theme(legend.position = c(0.85, 0.80)) + theme(axis.text=element_text(size=12), axis.title=element_text(size=12,face="bold"))
 
 
+# Males and female first cluster option - left-truncated at the age of onset of there care dependency
+# ---------------------------------------------------------------------------------------------------
 
-
-
-
-#   !!!!!  To account for left truncation, a cox ph approximation is used to estimate the KME
-
-
-# KME for sex differences #
-# %%%%%%%%%%%%%%%%%%%%%%% #
-
-mfit.2a <- survfit(coxph(Surv(time=EDAD,
+mfit.3a <- survfit(coxph(Surv(time=Edadinicio_cuidado,
                               time2 = age.ex,
-                              event = event) ~ 1, data = subset(link.may, SEXO=="Varón")), data = subset(link.may, SEXO=="Varón"),
+                              event = event) ~ 1, data = subset(link.may_M, cluster2=="early onset")), data = subset(link.may_M, cluster2=="early onset"),
+                   type = "kaplan-meier")
+mfit.3b <- survfit(coxph(Surv(time=Edadinicio_cuidado,
+                              time2 = age.ex,
+                              event = event) ~ 1, data = subset(link.may_M, cluster2=="late onset")), data = subset(link.may_M, cluster2=="late onset"),
                    type = "kaplan-meier")
 
-
-mfit.2b <- survfit(coxph(Surv(time=EDAD,
+mfit.3c <- survfit(coxph(Surv(time=Edadinicio_cuidado,
                               time2 = age.ex,
-                              event = event) ~ 1, data = subset(link.may, SEXO=="Mujer")), data = subset(link.may, SEXO=="Mujer"),
+                              event = event) ~ 1, data = subset(link.may_F, cluster2=="early onset long")), data = subset(link.may_F, cluster2=="early onset long"),
                    type = "kaplan-meier")
 
+mfit.3d <- survfit(coxph(Surv(time=Edadinicio_cuidado,
+                              time2 = age.ex,
+                              event = event) ~ 1, data = subset(link.may_F, cluster2=="late onset short")), data = subset(link.may_F, cluster2=="late onset short"),
+                   type = "kaplan-meier")
 
-KME.SEXOa <- tidy(mfit.2a) %>% select(estimate, time) %>% mutate(sex = "male")
-KME.SEXOb <- tidy(mfit.2b) %>% select(estimate, time) %>% mutate(sex = "female")
+KME.Clusta <- tidy(mfit.3a) %>% select(estimate, time) %>% mutate(disab = "early") %>% mutate(sex="male")
+KME.Clustb <- tidy(mfit.3b) %>% select(estimate, time) %>% mutate(disab = "late") %>% mutate(sex="male")
+KME.Clustc <- tidy(mfit.3c) %>% select(estimate, time) %>% mutate(disab = "early") %>% mutate(sex="female")
+KME.Clustd <- tidy(mfit.3d) %>% select(estimate, time) %>% mutate(disab = "late") %>% mutate(sex="female")
 
-KME.SEXO <- union(KME.SEXOa, KME.SEXOb)
-KME.SEXO %>% ggplot() +
-  geom_step(aes(x=time, y=estimate, color=sex)) +
+KME.CLustM <- union(KME.Clusta, KME.Clustb) %>% union(KME.Clustc) %>% union(KME.Clustd)
+KME1 <- KME.CLustM %>% ggplot() +
+  geom_step(aes(x=time, y=estimate, color=disab)) +
   scale_y_continuous(name = "Survival Probability")                  +
   scale_x_continuous(name = "Age") +
   scale_colour_manual(values = c("orange", "darkgrey"), name="")     +
   theme_bw()
+KME1 + facet_grid(. ~ sex) + theme(legend.position = c(0.85, 0.80)) + theme(axis.text=element_text(size=12), axis.title=element_text(size=12,face="bold"))
 
-# Very dramatic drop in survival probability over time (again women seem to have better survival)
 
+
+
+
+
+
+#### %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% ####
+#### %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% ####
+#### %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% ####
 
 
 #  KME by time in disability  #

@@ -33,9 +33,9 @@ library(WeightedCluster)
 
 # load("datasets/020_traMay.RData")
 # censored data
-load("datasets/020_traMay_C.RData")
+#load("datasets/020_traMay_C.RData")
 # censored data
-load("datasets/020_traMay_13.RData")
+#load("datasets/020_traMay_13.RData")
 # censored data with age of onset of a 12 A (ADL group A) disability as transition point from disability free to idependent dis
 load("datasets/020_traMay_D13.RData")
 
@@ -379,6 +379,76 @@ link.may_F <- link.may_F[order(link.may_F$Id),]
 ## 3.4  Create working data sets for the mortality analysis
 link.may_M <- link.may_M %>% left_join(tra_may_M, by="Id")
 link.may_F <- link.may_F %>% left_join(tra_may_F, by="Id")
+
+
+
+
+### Recode variables for the analysis
+
+# Education
+# ---------
+table(link.may_M$Estudios4)
+table(link.may_F$Estudios4)
+
+# delete the missings
+link.may_M <- link.may_M %>% mutate(Estudios4=ifelse(Estudios4=="NC",NA,Estudios4)) %>% filter(!is.na(Estudios4))
+link.may_F <- link.may_F %>% mutate(Estudios4=ifelse(Estudios4=="NC",NA,Estudios4)) %>% filter(!is.na(Estudios4))
+
+# Create English equivalent with less categories
+link.may_M <- link.may_M %>% mutate(education = ifelse(Estudios4==2, "Incomplete Educ.",
+                                                ifelse(Estudios4==3, "Primary Educ.", "Secondary Educ or higher")))
+
+link.may_F <- link.may_F %>% mutate(education = ifelse(Estudios4==2, "Incomplete Educ.",
+                                                       ifelse(Estudios4==3, "Primary Educ.", "Secondary Educ or higher")))
+
+# Civil Status
+# -------------
+table(link.may_M$Ecivil4)
+table(link.may_F$Ecivil4)
+
+# Create English equivalent with less categories
+link.may_M <- link.may_M %>% mutate(civil = ifelse(Ecivil4=="Casado", "Married",
+                                                       ifelse(Ecivil4=="viudo", "Widowed", "Others")))
+
+link.may_F <- link.may_F %>% mutate(civil = ifelse(Ecivil4=="Casado", "Married",
+                                                   ifelse(Ecivil4=="viudo", "Widowed", "Others")))
+
+# Co-vivienca with the partner
+# ----------------------------
+table(link.may_M$PAREJA)
+table(link.may_F$PAREJA)
+
+link.may_M <- link.may_M %>% mutate(PAREJA=ifelse(PAREJA=="NC",NA,PAREJA)) %>% filter(!is.na(PAREJA))
+link.may_F <- link.may_F %>% mutate(PAREJA=ifelse(PAREJA=="NC",NA,PAREJA)) %>% filter(!is.na(PAREJA))
+
+# Create English equivalent with less categories
+link.may_M <- link.may_M %>% mutate(CP = ifelse(PAREJA==1, "Lives with Partner", "Doesn´t live with partner"))
+link.may_F <- link.may_F %>% mutate(CP = ifelse(PAREJA==1, "Lives with Partner", "Doesn´t live with partner"))
+
+
+# Professional situation in last occupation
+# ------------------------------------------
+# 
+# table(link.may_M$SIT_PRO, useNA = "always")
+# table(link.may_F$SIT_PRO, useNA = "always")
+# 
+# # link.may_M <- link.may_M %>% mutate(SIT_PRO=ifelse(SIT_PRO=="NC",NA,SIT_PRO)) %>% filter(!is.na(SIT_PRO))
+# # 
+# # link.may_F <- link.may_F %>% mutate(SIT_PRO=ifelse(SIT_PRO=="NC",NA,SIT_PRO)) %>% filter(!is.na(SIT_PRO))
+# 
+# link.may_M <- link.may_M %>%  mutate(work = ifelse(SIT_PRO==4, "Employee",
+#                                             ifelse(SIT_PRO<=2, "Self-employed", "other")))
+# 
+# link.may_F <- link.may_F %>%  mutate(work = ifelse(SIT_PRO==4, "Employee",
+#                                             ifelse(SIT_PRO<=2,"self-employed", "other")))
+
+# Ingresos - Income (later)
+table(link.may_M$IM_MENS, useNA = "always")
+table(link.may_F$IM_MENS, useNA = "always")
+
+table(link.may_M$CD_FUEN, useNA = "always")
+table(link.may_F$CD_FUEN, useNA = "always")
+
 
 
 ### 3.5 save data
