@@ -11,6 +11,11 @@ library(broom)
 library(stargazer)
 library(tidyverse)
 library(data.table)
+library(TraMineR)
+library(reshape)
+library("RColorBrewer")
+library(cluster)
+
 # 0.3 Set right working directory
 dir()
 setwd("C:/Users/y4956294S/Documents/LONGPOP/Subproject 2 - SE differences in transition to dependency/R code/EDAD")
@@ -97,7 +102,7 @@ Purely looking at relative distributions, these are durations spent in disabilit
 # Males
 link.may_M <- link.may_M %>% mutate(dur_dis = round(age.ex,0)-round(EdadInicioDisca13,0))
 # hist(link.may_M$dur_dis)
-summary(link.may_M$dur_dis)
+#summary(link.may_M$dur_dis)
 # event distribution by duration in disability
 # --------------------------------------------
 DUR_Plot_M <- link.may_M %>% mutate(event = as.factor(event)) %>% 
@@ -114,7 +119,7 @@ DUR_Plot_M
                                                                           
 link.may_F <- link.may_F %>% mutate(dur_dis = round(age.ex,0)-round(EdadInicioDisca13,0))
 # hist(link.may_F$dur_dis)
-summary(link.may_F$dur_dis)
+# summary(link.may_F$dur_dis)
 
 # event distribution by duration in disability
 # --------------------------------------------
@@ -132,7 +137,7 @@ DUR_Plot_F
 
 ## KME Plots
 
-# Age as time axis
+# Age as time axis or not?
 Here we will have an important discussion point. As expected, individuals with a late onset of disability have higher survival probabilities at every single age. Interesting is the difference between men and women (area between the two graphs).
 However, these kind of KME don´t make much sense as the curves don´t start at the same point in time and with a risk score lower than 1.
 
@@ -177,7 +182,7 @@ Here just for men, the option with more than 2 groups.
 ## Males
 # exit time (month/12+year)
 link.may_M <- link.may_M %>% mutate(t.salida = (a_salida+(m_salida/12)) - 2006.99)
-hist(link.may_M$t.salida)
+#hist(link.may_M$t.salida)
 # entry time (month/12+year) - onset of disability
 # link.may_M <- link.may_M %>% mutate(t.entrada =  (EDAD-DISCA13_AGE)) # same story with inicio Disca44
 # hist(link.may_M$t.entrada)
@@ -186,7 +191,7 @@ hist(link.may_M$t.salida)
 ## Females
 # exit time (month/12+year)
 link.may_F <- link.may_F %>% mutate(t.salida = (a_salida+(m_salida/12)) - 2006.99)
-hist(link.may_F$t.salida)
+#hist(link.may_F$t.salida)
 # entry time (month/12+year) - onset of disability
 # link.may_F <- link.may_F %>% mutate(t.entrada = (EDAD-DISCA13_AGE)) # same story with inicio Disca44
 # hist(link.may_F$t.entrada)
@@ -225,146 +230,226 @@ KME2 + facet_grid(. ~ sex) + theme(legend.position = c(0.85, 0.80)) + theme(axis
 
 
 ## Regression
-Due to time pressure, I used Cox PH models to estimate covariate effects on survival. We can discuss using a parametric model (might be more accurate for adult mortality, might be not).
+Following are different survival models (mostly Cox models). Still on the table to discuss using a parametric model (might be more accurate for adult mortality, might be not).
+The models below use time between survey data and date of death/censorship as time dimensions. In other words, we compare the survival experience of every man/woman in our data set from 2008 to 2016 and age enters the model as controlling variable. 
 
 ```{r COX1, echo=FALSE}
 ###############################
-### Exploratory Cox Regression
+### Exploratory Cox Regression - classic survival setting (time at observation until death or censoring)
 ###############################
 
 # Preliminary step: Change Reference Category and Category names
 link.may_M$cluster2 <- as.factor(link.may_M$cluster2)
-link.may_M <- within(link.may_M, cluster2 <- relevel(cluster2, ref = "late onset"))  
+link.may_M <- within(link.may_M, cluster2 <- relevel(cluster2, ref = "early onset"))  
 link.may_F$cluster2 <- as.factor(link.may_F$cluster2)
-link.may_F <- within(link.may_F, cluster2 <- relevel(cluster2, ref = "late onset"))  
+link.may_F <- within(link.may_F, cluster2 <- relevel(cluster2, ref = "early onset long"))  
 
-link.may_M$cluster4 <- as.factor(link.may_M$cluster4)
-link.may_M <- within(link.may_M, cluster4 <- relevel(cluster4, ref = "late abrupt"))  
-link.may_F$cluster3 <- as.factor(link.may_F$cluster3)
-link.may_F <- within(link.may_F, cluster3 <- relevel(cluster3, ref = "late abrupt"))  
+## Males
 
-link.may_M <- within(link.may_M, Education <- relevel(Education, ref = "High"))  
-link.may_F <- within(link.may_F, Education <- relevel(Education, ref = "High"))  
-
-link.may_M <- within(link.may_M, Income <- relevel(Income, ref = "625+ eur"))  
-link.may_F <- within(link.may_F, Income <- relevel(Income, ref = "625+ eur"))  
-
-# Just the transitions
-# males
-Cox.CFP.a <- coxph(Surv(time=EDAD,
-                        time2=age.ex,
-                        event=event) ~ cluster2, 
+Cox.CFP.a <- coxph(Surv(time=t.salida,
+                        event=event) ~ cluster2 + EDAD, 
                    data=subset(link.may_M))
 
-Cox.CFP.a
+summary(Cox.CFP.a)
 
-# females
-Cox.CFP.b <- coxph(Surv(time=EDAD,
-                        time2=age.ex,
-                        event=event) ~ cluster2, 
+
+## Females
+
+Cox.CFP.b <- coxph(Surv(time=t.salida,
+                        event=event) ~ cluster2 + EDAD, 
                    data=subset(link.may_F))
 
-Cox.CFP.b
+summary(Cox.CFP.b)
 ```
 
-Now the model results with calender time as time axis (entry= Onset year of care).
+Below are the same models with additional covariates (education, civil status, covivienca, last employment situation). I am currently working on a variable to take co-morbidity into account which will add more to the story. We have to be aware of our case numbers ( males = `r length(link.may_F$Id)`, females = `r length(link.may_M$Id)`) but I think it would be better to compare the experience of individuals at the same age with each other. 
 
 ```{r COX2, echo=FALSE}
-# exit time (month/12+year)
-link.may_M <- link.may_M %>% mutate(t.salida = a_salida+(m_salida/12))
-#hist(link.may_F$t.salida)
+
+# make them factors
+link.may_M$education <- as.factor(link.may_M$education)
+link.may_F$education <- as.factor(link.may_F$education)
+# change the reference category
+link.may_M <- within(link.may_M, education <- relevel(education, ref = "Secondary Educ or higher")) 
+link.may_F <- within(link.may_F, education <- relevel(education, ref = "Secondary Educ or higher")) 
+
+# make them factors
+link.may_M$civil <- as.factor(link.may_M$civil)
+link.may_F$civil <- as.factor(link.may_F$civil)
+# change the reference category
+link.may_M <- within(link.may_M, civil <- relevel(civil, ref = "Married")) 
+link.may_F <- within(link.may_F, civil <- relevel(civil, ref = "Married")) 
+
+# make them factors
+link.may_M$work <- as.factor(link.may_M$work)
+link.may_F$work <- as.factor(link.may_F$work)
+# change the reference category
+link.may_M <- within(link.may_M, work <- relevel(work, ref = "Self-employed")) 
+link.may_F <- within(link.may_F, work <- relevel(work, ref = "self-employed")) 
+# make them factors
+link.may_M$CP <- as.factor(link.may_M$CP)
+link.may_F$CP <- as.factor(link.may_F$CP)
+
+# change the reference category
+link.may_M <- within(link.may_M, CP <- relevel(CP, ref = "Lives with Partner")) 
+link.may_F <- within(link.may_F, CP <- relevel(CP, ref = "Lives with Partner"))
+
+link.may_M <- link.may_M %>% mutate(age.gr = as.factor(ifelse(edad5Suecia == "45-64","45-64",
+                                             ifelse(edad5Suecia ==  "65-80", "65-80", "81+"))))
+
+link.may_F <- link.may_F %>% mutate(age.gr = as.factor(ifelse(edad5Suecia == "45-64","45-64",
+                                                              ifelse(edad5Suecia ==  "65-80", "65-80", "81+"))))
+
+# change the reference category
+link.may_M <- within(link.may_M, age.gr <- relevel(age.gr, ref = "45-64")) 
+link.may_F <- within(link.may_F, age.gr <- relevel(age.gr, ref = "45-64"))
+## Males
+## -----
+
+# exit time as time in years (month/12+year)
+link.may_M <- link.may_M %>% mutate(t.salida = (a_salida+(m_salida/12)) - 2006.99)
+#hist(link.may_M$t.salida)
+
 # entry time (month/12+year) - onset of disability
-link.may_M <- link.may_M %>% mutate(t.entrada = 2006.99 - (EDAD-Edadinicio_cuidado)) # same story with inicio Disca44
+link.may_M <- link.may_M %>% mutate(t.entrada.dis =  2006.99 - (EDAD-DISCA13_AGE)) # same story with inicio Disca44
+link.may_M <- link.may_M %>% mutate(t.salida.dis = (a_salida+(m_salida/12)))
 
-# males
-Cox.CFP.a <- coxph(Surv(time=t.entrada,
-                        time2=t.salida,
-                        event=event) ~ cluster2, 
+# entry time (month/12+year) - onset of dependency
+link.may_M <- link.may_M %>% mutate(t.entrada.dep =  2006.99 - (EDAD-Edadinicio_cuidado)) 
+
+## Females
+## -------
+
+# exit time (month/12+year)
+link.may_F <- link.may_F %>% mutate(t.salida = (a_salida+(m_salida/12)) - 2006.99)
+#hist(link.may_F$t.salida)
+
+
+# entry time (month/12+year) - onset of disability
+link.may_F <- link.may_F %>% mutate(t.entrada.dis =  2006.99 - (EDAD-DISCA13_AGE)) # same story with inicio Disca44
+link.may_F <- link.may_F %>% mutate(t.salida.dis = (a_salida+(m_salida/12)))
+
+# entry time (month/12+year) - onset of dependency
+link.may_F <- link.may_F %>% mutate(t.entrada.dep =  2006.99 - (EDAD-Edadinicio_cuidado)) 
+
+
+
+## Males
+
+Cox.CFP.a <- coxph(Surv(time=t.salida,
+                        event=event) ~ cluster2 + EDAD + education + work + CP + civil, 
                    data=subset(link.may_M))
 
-Cox.CFP.a
+summary(Cox.CFP.a)
 
-# females
-Cox.CFP.b <- coxph(Surv(time=t.entrada,
-                        time2=t.salida,
-                        event=event) ~ cluster2, 
+
+## Females
+
+Cox.CFP.b <- coxph(Surv(time=t.salida,
+                        event=event) ~ cluster2 + EDAD + education + work + CP + civil, 
                    data=subset(link.may_F))
 
-Cox.CFP.b
-
-
-
+summary(Cox.CFP.b)
 ```
+One other way to address this issue would be to use age groups instead of a continuous variable. The models could look like this (I will play around with different age groups):
+```{r Cox2b, echo=FALSE}
+## Males
 
-And here the models with the bigger groups:
-
-```{r COX3, echo=FALSE}
-
-# males
-Cox.CFP.a <- coxph(Surv(time=t.entrada,
-                        time2=t.salida,
-                        event=event) ~ cluster4, 
+Cox.CFP.a <- coxph(Surv(time=t.salida,
+                        event=event) ~ cluster2 + age.gr + education + work + CP + civil, 
                    data=subset(link.may_M))
 
-Cox.CFP.a
+summary(Cox.CFP.a)
 
-# females
-Cox.CFP.b <- coxph(Surv(time=t.entrada,
-                        time2=t.salida,
-                        event=event) ~ cluster3, 
+## Females
+
+Cox.CFP.b <- coxph(Surv(time=t.salida,
+                        event=event) ~ cluster2 + age.gr + education + work + CP + civil, 
                    data=subset(link.may_F))
 
-Cox.CFP.b
+summary(Cox.CFP.b)
 ```
+Below, I ran the models with age at survey as entry variable and age at death/censorship as exit variable. The choice of these time variables might be the most "accurate". I think it may be the most correct way because we compare individuals with the same age with each other and only take the time we really observe into account.
+```{r Cox 3, echo=FALSE}
+## Males
 
-After this overview about how the pathways describe survival in the preliminary models, here with two covariates:
+Cox.CFP.a <- coxph(Surv(time=EDAD,
+                        time2 = age.ex,
+                        event=event) ~ cluster2 + EDAD, 
+                   data=subset(link.may_M))
+summary(Cox.CFP.a)
 
-```{r COX4, echo=FALSE}
-# Plus SES variables
+
+## Females
+
+Cox.CFP.b <- coxph(Surv(time=EDAD,
+                        time2 = age.ex,
+                        event=event) ~ cluster2 + EDAD, 
+                   data=subset(link.may_F))
+summary(Cox.CFP.b)
+
+# Plus SES variables Age since onset
 
 # males
-Cox.CFP.e <- coxph(Surv(time=t.entrada,
-                    time2=t.salida,
-                    event=event) ~ cluster2 + Education + Income + EDAD,
-                 data=subset(link.may_M))
-
-Cox.CFP.e
-
-# females
-Cox.CFP.f <- coxph(Surv(time=t.entrada,
-                    time2=t.salida,
-                    event=event) ~ cluster2 + Education + Income + EDAD,
-                 data=subset(link.may_F))
-
-Cox.CFP.f
-```
-
-And the, for now, most complete model (information-wise):
-
-```{r COX5, echo=FALSE}
-# Plus SES variables
-
-# males
-Cox.CFP.e <- coxph(Surv(time=t.entrada,
-                    time2=t.salida,
-                    event=event) ~ cluster4 + Education + Income + EDAD,
-                 data=subset(link.may_M))
+Cox.CFP.e <- coxph(Surv(time=EDAD,
+                        time2 = age.ex,
+                        event=event) ~  cluster2 + EDAD + education + work + CP + civil,
+                   data=subset(link.may_M))
 
 summary(Cox.CFP.e)
 
 # females
-Cox.CFP.f <- coxph(Surv(time=t.entrada,
-                    time2=t.salida,
-                    event=event) ~ cluster3 + Education + Income + EDAD,
-                 data=subset(link.may_F))
+Cox.CFP.f <- coxph(Surv(time=EDAD,
+                        time2 = age.ex,
+                        event=event) ~ cluster2 + EDAD + education + work + CP + civil,
+                   data=subset(link.may_F))
+
+summary(Cox.CFP.f)
+```
+
+Below are the models with the age at dependency as start age (individuals are left-truncated at this age). The results are probably the most interesting, however, I am not 100% sure about this. With this, we select individuals upon there onset age of dependency but theoretically we do not observe there mortality risk unitl the survey year (2008).
+```{r Cox4, echo=FALSE}
+## Males
+
+Cox.CFP.a <- coxph(Surv(time=Edadinicio_cuidado,
+                        time2 = age.ex,
+                        event=event) ~ cluster2 + EDAD, 
+                   data=subset(link.may_M))
+summary(Cox.CFP.a)
+
+
+## Females
+
+Cox.CFP.b <- coxph(Surv(time=Edadinicio_cuidado,
+                        time2 = age.ex,
+                        event=event) ~ cluster2 + EDAD, 
+                   data=subset(link.may_F))
+summary(Cox.CFP.b)
+
+
+# Plus SES variables Age since onset
+
+# males
+Cox.CFP.e <- coxph(Surv(time=Edadinicio_cuidado,
+                        time2 = age.ex,
+                        event=event) ~  cluster2 + EDAD + education + work + CP + civil,
+                   data=subset(link.may_M))
+
+summary(Cox.CFP.e)
+
+# females
+Cox.CFP.f <- coxph(Surv(time=Edadinicio_cuidado,
+                        time2 = age.ex,
+                        event=event) ~ cluster2 + EDAD + education + work + CP + civil,
+                   data=subset(link.may_F))
 
 summary(Cox.CFP.f)
 ```
 
 # Still in Progress (Future Work)
 
-1. Choice of the onset of the pathway - Focus on functional limitation or any disability after age 50?
-1. Find the right model - Could be Cox could be a parametric model
-1. Clarify the purpose of the analysis
+1. Find the right model type - Could be Cox, could be a parametric model
+1. Recode the multi-morbity categories
+1. Life tables - DFLE
 1. Continue with Literature Review - sources about disability in Spain (?)
-1. Write everything up - Deadline: 22.03.2019 (1 month)
+1. Write everything up - Deadline: 22.03.2019
