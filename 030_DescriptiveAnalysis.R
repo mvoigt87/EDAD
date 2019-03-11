@@ -12,6 +12,7 @@ library(data.table)
 library(foreign)
 library(survival)
 library(broom)
+library(stargazer)
 
 
 # 0.3 Set right working directory
@@ -71,6 +72,9 @@ link.may_F %>% group_by(cluster2) %>% summarize(mean=mean(age.ex[event==1]), med
 link.may_F %>% group_by(cluster4) %>% summarize(mean=mean(age.ex[event==1]), median=median(age.ex[event==1]))
 
 # Check the NAs (exclude them!)
+
+# Output table for paper - summary stats on the age variables   !!! (Make all of them numeric arguments)
+stargazer(link.may_M[,c(409,424,443,463,487,502, 513)])
 
 ## ---------------------------------
 ## 1.2 Time between onset and death
