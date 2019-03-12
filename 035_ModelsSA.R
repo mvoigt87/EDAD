@@ -11,6 +11,12 @@ library(foreign)
 library(survival)
 library(broom)
 library(stargazer)
+# Use for a parametric model
+library(flexsurv)
+# for the cool plots
+library(survminer)
+# for checking for different distributions
+library(fitdistrplus)
 
 # 0.3 Set right working directory
 dir()
@@ -104,13 +110,39 @@ link.may_F <- within(link.may_F, age.gr <- relevel(age.gr, ref = "45-64"))
 #link.may <- within(link.may, Income <- relevel(Income, ref = "625+ eur"))  
 
 
+# ----------------- #
+# Duration variable #
+# ----------------- #
+link.may_F <- link.may_F %>% mutate(dur_dis = Edadinicio_cuidado - DISCA13_AGE)
+link.may_M <- link.may_M %>% mutate(dur_dis = Edadinicio_cuidado - DISCA13_AGE)
+summary(link.may_F$dur_dis)
+summary(link.may_M$dur_dis)
+hist(link.may_M$dur_dis, breaks=50)
+
+# Probably better to be a categorical variable
+link.may_F <- link.may_F %>% mutate(dur_dis_cat = as.factor(ifelse(dur_dis<(-1), "$> 1$ years before", 
+                                                         ifelse(dur_dis<1, "same time",
+                                                                ifelse(dur_dis<5, "$< 3$ years after", "$> 3$ years after")))))
+
+table(link.may_F$dur_dis_cat)
+
+
+# Probably better to be a categorical variable
+link.may_M <- link.may_M %>% mutate(dur_dis_cat = as.factor(ifelse(dur_dis<(-1), "$> 1$ years before", 
+                                                         ifelse(dur_dis<1, "same time",
+                                                                ifelse(dur_dis<5, "$< 3$ years after", "$> 3$ years after")))))
+
+table(link.may_M$dur_dis_cat)
+
+# relevel the categories
+# ----------------------
+
+link.may_F <- within(link.may_F, dur_dis_cat <- relevel(dur_dis_cat, ref = "$> 1$ years before")) 
+link.may_M <- within(link.may_M, dur_dis_cat <- relevel(dur_dis_cat, ref = "$> 1$ years before"))
 
 ###############################
 ### Exploratory Cox Regression
 ###############################
-
-
-
 
 ## Males
 ## -----
@@ -236,37 +268,156 @@ Cox.CFP.f <- coxph(Surv(time=EDAD,
 summary(Cox.CFP.f)
 
 
+###############################################################################################################
+###############################################################################################################
+###############################################################################################################
+###############################################################################################################
+###############################################################################################################
+###############################################################################################################
+###############################################################################################################
+###############################################################################################################
+###############################################################################################################
+##### Using time between disability onset and dependency onset as explanatory variable (severity onset) #######
+###############################################################################################################
+###############################################################################################################
+###############################################################################################################
+###############################################################################################################
+
+#########
+# males #
+#########
+
+Cox_M_1 <- coxph(Surv(time=EDAD,
+                        time2 = age.ex,
+                        event=event) ~  dur_dis_cat + education + CP + civil + EntryGrave13,
+                   data=subset(link.may_M))
+
+summary(Cox_M_1)
+
+
+# 2. step - add severity and comorbidity
+
+
+# females
+Cox.CFP.f <- coxph(Surv(time=EDAD,
+                        time2 = age.ex,
+                        event=event) ~ dur_dis_cat + education + CP + civil + EntryGrave13,
+                   data=subset(link.may_F))
+
+summary(Cox.CFP.f)
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-# Additional variables
+#### ---------------------------------------- ####
+#### Same with the different timing variables ####
+#### ---------------------------------------- ####
 
 # males
-Cox.CFP.e <- coxph(Surv(time=t.entrada,
-                        time2=t.salida,
-                        event=event) ~ cluster4 + Education + Income + EDAD,
+Cox.CFP.e <- coxph(Surv(time=t.salida,
+                        event=event) ~ dur_dis_cat + EDAD + education + CP + civil,
                    data=subset(link.may_M))
 
 summary(Cox.CFP.e)
 
 # females
-Cox.CFP.f <- coxph(Surv(time=t.entrada,
-                        time2=t.salida,
-                        event=event) ~ cluster3 + Education + Income + EDAD,
+Cox.CFP.f <- coxph(Surv(time=t.salida,
+                        event=event) ~ dur_dis_cat + EDAD + education + CP + civil,
                    data=subset(link.may_F))
 
 summary(Cox.CFP.f)
+
+
+############################
+############################
+##### Gompertz Model #######
+############################
+############################
+
+
+
+## Females
+GOMP_F <- flexsurvreg(Surv(time=EDAD,
+                           time2=age.ex,
+                           event=event) ~ dur_dis_cat + education + CP + civil + EntryGrave13, data = link.may_F,
+                          dist = "gompertz")
+GOMP_F
+# survival curve
+plot(GOMP_F, xlim=c(50,100))
+legend("topright",legend=c("KME","Gompertz Curve"), 
+       lty=c(1,1),col=c("black","red"), cex=0.75)
+
+# hazard plot # doesn´t work for left-truncated data
+# plot(GOMP_F, xlim=c(50,100),ylim=c(-0.1,1),type = "hazard")
+
+GOMP_M <- flexsurvreg(Surv(time=EDAD,
+                          time2=age.ex,
+                          event=event) ~ dur_dis_cat + education + CP + civil + EntryGrave13, data = link.may_M,
+                     dist = "gompertz")
+GOMP_M
+
+# survival curve
+plot(GOMP_M, xlim=c(50,100))
+legend("topright",legend=c("KME","Gompertz Curve"), 
+       lty=c(1,1),col=c("black","red"), cex=0.75)
+
+
+
+
+
+# estimated shape and scale
+shape <- 0.096
+rate <- 0.0000641
+# vector of quantiles
+time<-seq(50,100,1)
+
+### Base survival - Gompertz function (http://www.statsathome.com/2017/06/07/fitting-non-linear-groth-curves-in-r/)
+
+gompertz <- function(time, a, mu, lambda){
+  y <- a*exp(-exp(mu*exp(1)/a*(lambda-time)+1))
+  return(data.frame(time=time, y=y))
+}
+
+fit <- gompertz(time = time, a = 2 ,mu = shape ,lambda = rate)
+
+plot(fit)
+
+
+# function for the hazard rate
+# ---------------------------- #
+# 
+# haz.Gompertz <- function(x, shape, rate) {
+#   hgompertz(x, shape = shape, rate = rate)
+# }
+# 
+# 
+# x <- seq(50,100,1)             ## to make it the same time scale
+# # parameters
+# shape.m <- GOMP_F$coefficients[1]
+# rate.m <- 0.0000641                  ## something went wrong with the rate (always negative)
+# 
+# 
+# haz.Gomp <- as.vector(haz.Gompertz(x=x, shape = shape.m, rate = rate.m))
+# 
+# plot(x=x,y=log(haz.Gomp), type="l")  
+
+# # Gompertz survival function
+# Gomp.Surv <- function(time,a=0,b=0,c=0){
+#   y(t) <- a*exp(-b*exp(-c*t))
+#   return(y)
+# }  
+
+
+
+## Males
+## -----
+
+GOMP_M <- flexsurvreg(Surv(time=EDAD,
+                           time2=age.ex,
+                           event=event) ~ dur_dis_cat + education + CP + civil + EntryGrave13, data = link.may_M,
+                      dist = "gompertz")
+
+
 
 
 

@@ -75,7 +75,7 @@ link.may_F %>% group_by(cluster4) %>% summarize(mean=mean(age.ex[event==1]), med
 
 # Output table for paper - summary stats on the age variables   !!! (Make all of them numeric arguments)
 stargazer(link.may_M[,c(409,424,443,463,487,502, 513)])
-
+stargazer(link.may_F[,c(409,424,443,463,487,502, 513)])
 ## ---------------------------------
 ## 1.2 Time between onset and death
 ## ---------------------------------
