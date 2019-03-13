@@ -358,6 +358,11 @@ tra_may_F <- tra_may_F[order(tra_may_F$Id),]
 
 load(file='010_mayor50.link.RData')
 
+##########################################################################
+link.may50 <- link.may50 %>% filter(!is.na(Edadinicio_cuidado))        ### Here we select the ones with care need!
+# (5674 individuals)
+##########################################################################
+
 # !!! CHANGE THE DATASET ACCORDING TO THE NEEDS
 link.may <- link.may50  %>% filter(Edadinicio_cuidado<100) %>% filter(!is.na(EdadInicioDisca13)) %>% 
    filter(DISCA13_AGE<100) %>% filter(EdadInicioDisca13 <= EDAD) 

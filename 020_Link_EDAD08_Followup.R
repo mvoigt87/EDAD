@@ -132,8 +132,6 @@ link.may50 %>% count(EDAD < age.ex)         # bien!
 
 # Select the individuals which have experienced care episodes
 link.may50 %>% count(!is.na(Edadinicio_cuidado))
-link.may50 <- link.may50 %>% filter(!is.na(Edadinicio_cuidado))        ### Here we select the ones with care need!
-# (5674 individuals)
 
 # disability
 # DISCA 44 - mix between functional limitations (de piel a dentro) and (I)ADLs (de piel a fuera)
@@ -185,7 +183,64 @@ link.may50 <- link.may50 %>%
                             DIS_13_A)) 
   
 
-link.may50 <- link.may50 %>% filter(DISCA13_AGE>=50) %>% filter(DISCA13_AGE<999)
+
+
+
+# Multi- and co- morbidity variables
+# ---------------------------------- #
+
+table(link.may50$K_2, useNA="always")     # - chronic disease
+class(link.may50$K_3_1)   # - chronic bronchitis
+table(link.may50$K_3_1)
+# other chronic diseases
+table(link.may50$K_3_19)
+
+
+# Try to make groups
+table(link.may50$K_3_2)
+table(link.may50$K_3_3)
+table(link.may50$K_3_2[link.may50$K_3_3=="NC"]) # seem to be more or less the same people
+
+# Cardiovascular diseases (includes stroke)
+link.may50 <- link.may50 %>% mutate(D1_CVD = ifelse(K_3_2=="Sí" | K_3_3=="Sí" | K_3_5=="Sí","CVD", "No CVD")) %>% 
+                # Now bring the missings back
+                             mutate(D1_CVD = ifelse(K_3_2=="NC" & K_3_3=="NC" & K_3_5=="NC", NA, D1_CVD))
+
+# Cancer
+table(link.may50$K_3_12)
+link.may50 <- link.may50 %>% mutate(D2_C = ifelse(K_3_12!="Sí","Cancer", ifelse(K_3_12=="NC", NA, "No Cancer")))
+
+# Mental diseases
+table(link.may50$K_3_15)
+table(link.may50$K_3_16)
+table(link.may50$K_3_17)
+link.may50 <- link.may50 %>% mutate(D3_MD = ifelse(K_3_15=="Sí"| K_3_16=="Sí" | K_3_17=="Sí","Mental disease", "No mental disease")) %>% 
+                              # Now bring the missings back
+                             mutate(D3_MD = ifelse(K_3_15=="NC" & K_3_16=="NC" & K_3_17=="NC", NA, D3_MD))                    
+
+                         
+                         
+# Accident in the last 12 months #
+# ------------------------------ #
+
+class(link.may50$K_4)   
+table(link.may50$K_4)
+
+link.may50 <- link.may50 %>% mutate(Accident12 = ifelse(K_4=="Sí", "Accident 12 mo", ifelse(K_4=="NC", NA, "No Accident")))
+
+# Body and attitude #
+# ----------------- #
+table(link.may50$K_7)
+
+link.may50 <- link.may50 %>% mutate(DailyAct = ifelse(K_7=="Sí", "Daily activity", ifelse(K_7=="NC", NA, "No daily act.")))
+
+
+
+######### Extract just the cases needed! ############
+
+# link.may50 <- link.may50 %>% filter(DISCA13_AGE>=50) %>% filter(DISCA13_AGE<999)
+
+######### Extract just the cases needed! ############
 
 # -----------------------------------------------
 # save(link.may50, file='010_mayor50.link.RData')

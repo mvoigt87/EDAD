@@ -28,6 +28,11 @@ load(file='010_mayor50.link.RData')           ### !!! Change when different data
 # 1.0. Select Population - Get rid of the "NC" cases for now and only extract the dependent ones
 # -----------------------------------------------------------------------------------------------
 
+
+######### Extract just the cases needed! ############
+
+link.may50 <- link.may50 %>% filter(DISCA13_AGE>=50) %>% filter(DISCA13_AGE<999)
+
 # Enter name of the dataset right of the equation sign (in case different data is used)
 link.may <- link.may50 
 link.may <- data.table(link.may)
