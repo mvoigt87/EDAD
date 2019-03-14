@@ -451,10 +451,14 @@ link.may_F <- link.may_F %>% mutate(CP = ifelse(PAREJA==1, "Lives with Partner",
 table(link.may_M$IM_MENS, useNA = "always")
 table(link.may_F$IM_MENS, useNA = "always")
 
-table(link.may_M$CD_FUEN, useNA = "always")
-table(link.may_F$CD_FUEN, useNA = "always")
+
+link.may_M <- link.may_M %>% mutate(income = as.factor(ifelse(IM_MENS=="Menos de 500 euros" | IM_MENS=="De 500 a menos de 1000 euros", "$<$ 1000 Euro",
+                                             ifelse(IM_MENS=="De 1000 a menos de 1500 euros" | IM_MENS=="De 1500 a menos de 2000 euros ", "1000-2000 Euro", "$>$ 2000 Euro"))))
+link.may_F <- link.may_F %>% mutate(income = as.factor(ifelse(IM_MENS=="Menos de 500 euros" | IM_MENS=="De 500 a menos de 1000 euros", "$<$ 1000 Euro",
+                                                                    ifelse(IM_MENS=="De 1000 a menos de 1500 euros" | IM_MENS=="De 1500 a menos de 2000 euros ", "1000-2000 Euro", "$>$ 2000 Euro"))))
 
 
+table(link.may_F$income, useNA = "always")
 
 ### 3.5 save data
 

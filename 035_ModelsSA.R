@@ -47,8 +47,8 @@ load(file = 'datasets/030_linkmay_F_50ADL.RData')
 #### 1. Change categories and referecnces
 
 
-table(link.may_M$education)
-table(link.may_F$education)
+table(link.may_M$education, useNA = "always")
+table(link.may_F$education, useNA = "always")
 
 # make them factors
 link.may_M$education <- as.factor(link.may_M$education)
@@ -58,7 +58,7 @@ link.may_M <- within(link.may_M, education <- relevel(education, ref = "Secondar
 link.may_F <- within(link.may_F, education <- relevel(education, ref = "Secondary Educ or higher")) 
 
 
-table(link.may_M$civil)
+table(link.may_M$civil, useNA = "always")
 table(link.may_F$civil)
 
 # make them factors
@@ -69,15 +69,17 @@ link.may_M <- within(link.may_M, civil <- relevel(civil, ref = "Married"))
 link.may_F <- within(link.may_F, civil <- relevel(civil, ref = "Married")) 
 
 
-table(link.may_M$work)
-table(link.may_F$work)
+## Income
+table(link.may_M$IM_MENS, useNA = "always")
+table(link.may_F$IM_MENS, useNA = "always") # What?
 
-# make them factors
-link.may_M$work <- as.factor(link.may_M$work)
-link.may_F$work <- as.factor(link.may_F$work)
-# change the reference category
-link.may_M <- within(link.may_M, work <- relevel(work, ref = "Self-employed")) 
-link.may_F <- within(link.may_F, work <- relevel(work, ref = "self-employed")) 
+
+link.may_M <- link.may_M %>% mutate(income = as.factor(ifelse(IM_MENS=="Menos de 500 euros" | IM_MENS=="De 500 a menos de 1000 euros", "$<$ 1000 Euro",
+                                                              ifelse(IM_MENS=="De 1000 a menos de 1500 euros" | IM_MENS=="De 1500 a menos de 2000 euros ", "1000-2000 Euro", "$>$ 2000 Euro"))))
+link.may_F <- link.may_F %>% mutate(income = as.factor(ifelse(IM_MENS=="Menos de 500 euros" | IM_MENS=="De 500 a menos de 1000 euros", "$<$ 1000 Euro",
+                                                              ifelse(IM_MENS=="De 1000 a menos de 1500 euros" | IM_MENS=="De 1500 a menos de 2000 euros ", "1000-2000 Euro", "$>$ 2000 Euro"))))
+link.may_M <- within(link.may_M, income <- relevel(income, ref = "$>$ 2000 Euro")) 
+link.may_F <- within(link.may_F, income <- relevel(income, ref = "$>$ 2000 Euro")) 
 
 
 table(link.may_M$CP)
@@ -107,7 +109,67 @@ link.may_F <- link.may_F %>% mutate(age.gr = as.factor(ifelse(edad5Suecia == "45
 link.may_M <- within(link.may_M, age.gr <- relevel(age.gr, ref = "45-64")) 
 link.may_F <- within(link.may_F, age.gr <- relevel(age.gr, ref = "45-64")) 
 
-#link.may <- within(link.may, Income <- relevel(Income, ref = "625+ eur"))  
+#link.may <- within(link.may, Income <- relevel(Income, ref = "625+ eur")) 
+
+# 2.3 Accident in the last 12 months #
+# ---------------------------------- #
+
+class(link.may_F$K_4)   
+table(link.may_F$K_4, useNA = "always")
+
+link.may_F <- link.may_F %>% mutate(Accident12 = as.factor(ifelse(K_4=="Sí", "Accident 12 mo", ifelse(K_4=="NC", NA, "No Accident"))))
+link.may_M <- link.may_M %>% mutate(Accident12 = as.factor(ifelse(K_4=="Sí", "Accident 12 mo", ifelse(K_4=="NC", NA, "No Accident"))))
+
+link.may_F <- within(link.may_F, Accident12 <- relevel(Accident12, ref = "No Accident")) 
+link.may_M <- within(link.may_M, Accident12 <- relevel(Accident12, ref = "No Accident"))
+
+# 2.4 Body and attitude #
+# ---------------------- #
+table(link.may_F$K_7, useNA = "always")
+
+link.may_F <- link.may_F %>% mutate(DailyAct = ifelse(K_7=="Sí", "Daily activity", ifelse(K_7=="NC", NA, "No daily act.")))
+link.may_M <- link.may_M %>% mutate(DailyAct = ifelse(K_7=="Sí", "Daily activity", ifelse(K_7=="NC", NA, "No daily act.")))
+
+###### 2.5 Co-morbidity
+###### ----------------
+
+# Cardiovascular diseases (includes stroke)
+link.may_F <- link.may_F %>% mutate(D1_CVD = ifelse(K_3_2=="Sí" | K_3_3=="Sí" | K_3_5=="Sí","CVD", "No CVD")) %>% 
+  # Now bring the missings back
+  mutate(D1_CVD = ifelse(K_3_2=="NC" & K_3_3=="NC" & K_3_5=="NC", NA, D1_CVD))
+# Cardiovascular diseases (includes stroke)
+link.may_M <- link.may_M %>% mutate(D1_CVD = ifelse(K_3_2=="Sí" | K_3_3=="Sí" | K_3_5=="Sí","CVD", "No CVD")) %>% 
+  # Now bring the missings back
+  mutate(D1_CVD = ifelse(K_3_2=="NC" & K_3_3=="NC" & K_3_5=="NC", NA, D1_CVD))
+
+# Cancer
+link.may_F <- link.may_F %>% mutate(D2_C = ifelse(K_3_12!="Sí","Cancer", ifelse(K_3_12=="NC", NA, "No Cancer")))
+link.may_M <- link.may_M %>% mutate(D2_C = ifelse(K_3_12!="Sí","Cancer", ifelse(K_3_12=="NC", NA, "No Cancer")))
+
+# Mental diseases
+link.may_F <- link.may_F %>% mutate(D3_MD = ifelse(K_3_15=="Sí"| K_3_16=="Sí" | K_3_17=="Sí","Mental disease", "No mental disease")) %>% 
+  # Now bring the missings back
+  mutate(D3_MD = ifelse(K_3_15=="NC" & K_3_16=="NC" & K_3_17=="NC", NA, D3_MD))  
+
+link.may_M <- link.may_M %>% mutate(D3_MD = ifelse(K_3_15=="Sí"| K_3_16=="Sí" | K_3_17=="Sí","Mental disease", "No mental disease")) %>% 
+  # Now bring the missings back
+  mutate(D3_MD = ifelse(K_3_15=="NC" & K_3_16=="NC" & K_3_17=="NC", NA, D3_MD))  
+
+### Change references
+
+# CVD
+link.may_M <- link.may_M %>% mutate(D1_CVD = as.factor(D1_CVD))
+link.may_F <- link.may_F %>% mutate(D1_CVD = as.factor(D1_CVD))
+
+link.may_M <- within(link.may_M, D1_CVD <- relevel(D1_CVD, ref = "No CVD")) 
+link.may_F <- within(link.may_F, D1_CVD <- relevel(D1_CVD, ref = "No CVD")) 
+
+# Mental diseases
+link.may_M <- link.may_M %>% mutate(D3_MD = as.factor(D3_MD))
+link.may_F <- link.may_F %>% mutate(D3_MD = as.factor(D3_MD))
+
+link.may_M <- within(link.may_M, D3_MD <- relevel(D3_MD, ref = "No mental disease")) 
+link.may_F <- within(link.may_F, D3_MD <- relevel(D3_MD, ref = "No mental disease"))
 
 
 # ----------------- #
@@ -139,6 +201,27 @@ table(link.may_M$dur_dis_cat)
 
 link.may_F <- within(link.may_F, dur_dis_cat <- relevel(dur_dis_cat, ref = "$> 1$ years before")) 
 link.may_M <- within(link.may_M, dur_dis_cat <- relevel(dur_dis_cat, ref = "$> 1$ years before"))
+
+
+# relevel the categories
+# ----------------------
+
+link.may_F <- within(link.may_F, EntryGrave13_cat <- relevel(as.factor(EntryGrave13_cat), ref = "85+")) 
+link.may_M <- within(link.may_M, EntryGrave13_cat <- relevel(as.factor(EntryGrave13_cat), ref = "85+"))
+
+
+
+# missing value exploration
+# -------------------------
+
+library(Amelia)
+
+# Make data set with variables for the analysis
+training.data_M <- link.may_M %>% dplyr::select(dur_dis_cat, CP, civil,EntryGrave13_cat, education, Accident12, DailyAct, D1_CVD, 
+                                         D2_C, D3_MD)
+
+missmap(training.data_M, main = "Missing values vs observed")
+
 
 ###############################
 ### Exploratory Cox Regression
@@ -289,7 +372,8 @@ summary(Cox.CFP.f)
 
 Cox_M_1 <- coxph(Surv(time=EDAD,
                         time2 = age.ex,
-                        event=event) ~  dur_dis_cat + education + CP + civil + EntryGrave13,
+                        event=event) ~ dur_dis_cat + EntryGrave13_cat + D1_CVD + D2_C + D3_MD + education + 
+                                        CP + civil + income + Accident12 + DailyAct,
                    data=subset(link.may_M))
 
 summary(Cox_M_1)
@@ -299,34 +383,24 @@ summary(Cox_M_1)
 
 
 # females
-Cox.CFP.f <- coxph(Surv(time=EDAD,
+Cox_F_1 <- coxph(Surv(time=EDAD,
                         time2 = age.ex,
-                        event=event) ~ dur_dis_cat + education + CP + civil + EntryGrave13,
+                        event=event) ~ dur_dis_cat + EntryGrave13_cat + D1_CVD + D2_C + D3_MD + education + 
+                                       CP + civil + income + Accident12 + DailyAct,
                    data=subset(link.may_F))
 
-summary(Cox.CFP.f)
+summary(Cox_F_1)
 
 
-
-
-#### ---------------------------------------- ####
-#### Same with the different timing variables ####
-#### ---------------------------------------- ####
-
-# males
-Cox.CFP.e <- coxph(Surv(time=t.salida,
-                        event=event) ~ dur_dis_cat + EDAD + education + CP + civil,
-                   data=subset(link.may_M))
-
-summary(Cox.CFP.e)
-
-# females
-Cox.CFP.f <- coxph(Surv(time=t.salida,
-                        event=event) ~ dur_dis_cat + EDAD + education + CP + civil,
-                   data=subset(link.may_F))
-
-summary(Cox.CFP.f)
-
+# Put the output together
+stargazer(Cox_F_1,Cox_M_1, title="Cox PH Regression Models",no.space=F,
+          ci=TRUE, ci.level=0.95, omit.stat=c("max.rsq"),dep.var.labels=c("Relative risk of dying"),
+          covariate.labels=c("$<$ 3 years after Disca 13","$>$ 3 years after Disca 13", "same time as Disca 13", 
+                              "Onset sev. dis. $<$ 65", "Onset sev. dis. 65-75","Onset sev. dis. 75-85","No sev. disability",
+                              "Cardiovascular Dis.", "Cancer free", "Has mental disease", "Incomplete Ed." ,"Primary Ed.",
+                             "No cohabiting with partner", "Single/Div","Widowed", "$<$ 1000 Euro per mo.", 
+                             "1000-2000 Euro per mo.", "Had accident in last 12 mo.","No daily activity"),
+          single.row=FALSE, apply.coef = exp)
 
 ############################
 ############################

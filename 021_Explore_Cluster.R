@@ -103,73 +103,19 @@ link.may %>% mutate(event = as.factor(event)) %>%
 #### ----------------------------------------------------- ####
 
 
-## 2.1. Onset of incapacity of an activity of daily living (by severity)
-## ---------------------------------------------------------------------
+# # Create a variable for ADL and IADL severity
+# link.may <- link.may %>% mutate(ADL_S = as.factor(ifelse(DIS_1_S=="severe", "severe", ifelse(DIS_2_S=="severe", "severe",
+#                                                  ifelse(DIS_3_S=="severe", "severe", ifelse(DIS_4_S=="severe","severe",
+#                                                  ifelse(DIS_5_S=="severe", "severe", ifelse(IS_6_S=="severe", "severe",
+#                                                 ifelse(DIS_7_S=="severe", "severe", ifelse(DIS_8_S=="severe", "severe",
+#                                                  ifelse(DIS_9_S=="severe", "severe", ifelse(DIS_10_S=="severe", "severe", "mild"))))))))))))
+# table(link.may$ADL_S)
+# 
+# 
+# link.may <- link.may %>% mutate(IADL_S = as.factor(ifelse(DIS_11_S=="severe"|DIS_12_S=="severe"|DIS_13_S=="severe", "severe", "mild")))
+# table(link.may$IADL_S)
 
-# For first onset age use "EdadInicioDisca13"
-
-# Minimum age for onset of one of the 13 (I)ADLs (Using the age information for single disabilities)
-
-table(link.may$MOV_18_2)
-
-# recode all severity variables (DISCA 13) in two groups
-link.may <- link.may %>%
-  # change posture/move
-  mutate(DIS_1_S = ifelse(MOV_18_2=="Con dificultad moderada", "mild", "severe")) %>% 
-  # walking and moving inside
-  mutate(DIS_2_S = ifelse(MOV_20_2=="Con dificultad moderada", "mild", "severe")) %>%
-  # walking and moving outside
-  mutate(DIS_3_S = ifelse(MOV_21_2=="Con dificultad moderada", "mild", "severe")) %>% 
-  # Sitting down & using public transport
-  mutate(DIS_4_S = ifelse(MOV_22_2=="Con dificultad moderada", "mild", "severe")) %>% 
-  # washing and drying
-  mutate(DIS_5_S = ifelse(AUT_27_2=="Con dificultad moderada", "mild", "severe")) %>% 
-  # basic hygene
-  mutate(DIS_6_S = ifelse(AUT_28_2=="Con dificultad moderada", "mild", "severe")) %>% 
-  # urinating
-  mutate(DIS_7_S = ifelse(AUT_29_2=="Con dificultad moderada", "mild", "severe")) %>% 
-  # bathroom
-  mutate(DIS_8_S = ifelse(AUT_30_2=="Con dificultad moderada", "mild", "severe")) %>% 
-  # dressing and undressing
-  mutate(DIS_9_S = ifelse(AUT_32_2=="Con dificultad moderada", "mild", "severe")) %>% 
-  # eating and drinking
-  mutate(DIS_10_S = ifelse(AUT_33_2=="Con dificultad moderada", "mild", "severe")) %>% 
-  # organising shopping for groceries
-  mutate(DIS_11_S = ifelse(VDOM_36_2=="Con dificultad moderada", "mild", "severe")) %>% 
-  # preparing food
-  mutate(DIS_12_S = ifelse(VDOM_37_2=="Con dificultad moderada", "mild", "severe")) %>% 
-  # household tasks
-  mutate(DIS_13_S = ifelse(AUT_28_2=="Con dificultad moderada", "mild", "severe"))
   
-  
-# recode entry age into first severe limitation (DISCA 13)
-link.may <- link.may %>% 
-  mutate(DIS_1_SA = ifelse(DIS_1_S=="severe", MOV_18_5, 999)) %>% mutate(DIS_1_SA = ifelse(is.na(DIS_1_SA),999, DIS_1_SA)) %>% 
-  mutate(DIS_2_SA = ifelse(DIS_2_S=="severe", MOV_20_5, 999)) %>% mutate(DIS_2_SA = ifelse(is.na(DIS_2_SA),999, DIS_2_SA)) %>%
-  mutate(DIS_3_SA = ifelse(DIS_3_S=="severe", MOV_21_5, 999)) %>% mutate(DIS_3_SA = ifelse(is.na(DIS_3_SA),999, DIS_3_SA)) %>%
-  mutate(DIS_4_SA = ifelse(DIS_4_S=="severe", MOV_22_5, 999)) %>% mutate(DIS_4_SA = ifelse(is.na(DIS_4_SA),999, DIS_4_SA)) %>%
-  mutate(DIS_5_SA = ifelse(DIS_5_S=="severe", AUT_27_5, 999)) %>% mutate(DIS_5_SA = ifelse(is.na(DIS_5_SA),999, DIS_5_SA)) %>%
-  mutate(DIS_6_SA = ifelse(DIS_6_S=="severe", AUT_28_5, 999)) %>% mutate(DIS_6_SA = ifelse(is.na(DIS_6_SA),999, DIS_6_SA)) %>%
-  mutate(DIS_7_SA = ifelse(DIS_7_S=="severe", AUT_29_5, 999)) %>% mutate(DIS_7_SA = ifelse(is.na(DIS_7_SA),999, DIS_7_SA)) %>%
-  mutate(DIS_8_SA = ifelse(DIS_8_S=="severe", AUT_30_5, 999)) %>% mutate(DIS_8_SA = ifelse(is.na(DIS_8_SA),999, DIS_8_SA)) %>%
-  mutate(DIS_9_SA = ifelse(DIS_9_S=="severe", AUT_32_5, 999)) %>% mutate(DIS_9_SA = ifelse(is.na(DIS_9_SA),999, DIS_9_SA)) %>%
-  mutate(DIS_10_SA = ifelse(DIS_10_S=="severe", AUT_33_5, 999)) %>% mutate(DIS_10_SA = ifelse(is.na(DIS_10_SA),999, DIS_10_SA)) %>%
-  mutate(DIS_11_SA = ifelse(DIS_11_S=="severe", VDOM_36_5, 999)) %>% mutate(DIS_11_SA = ifelse(is.na(DIS_11_SA),999, DIS_11_SA)) %>%
-  mutate(DIS_12_SA = ifelse(DIS_12_S=="severe", VDOM_37_5, 999)) %>% mutate(DIS_12_SA = ifelse(is.na(DIS_12_SA),999, DIS_12_SA)) %>%
-  mutate(DIS_13_SA = ifelse(DIS_13_S=="severe", VDOM_38_5, 999)) %>% mutate(DIS_13_SA = ifelse(is.na(DIS_13_SA),999, DIS_13_SA)) %>% 
-
-## Now compute the column minimum (gives the entry age to severity)
-  mutate(EntryGrave13 =pmin(DIS_1_SA, DIS_2_SA, DIS_3_SA, DIS_4_SA, DIS_5_SA, DIS_6_SA,
-                                  DIS_7_SA, DIS_8_SA, DIS_9_SA, DIS_10_SA, DIS_11_SA, DIS_12_SA,
-                                  DIS_13_SA))
-
-
-summary(link.may$EntryGrave13)
-hist(link.may$EntryGrave13[link.may$EntryGrave13<999])
-
-# For later purposes the 999 have to be set to NAs
-link.may <- link.may %>% mutate(EntryGrave13=ifelse(EntryGrave13==999, NA, EntryGrave13))
-
 
 
 # 2.2 ABC Scheme
@@ -197,25 +143,9 @@ summary(abc)
   link.may[,.N,.(bc=edadiniciodisca12B<=edadiniciodisca12C, cb=edadiniciodisca12C<edadiniciodisca12B)]
   # A < B < C
   link.may[,.N,.(abc=edadiniciodisca12A<=edadiniciodisca12B & edadiniciodisca12C)]
-  # abc    N
-  # 1:    NA 2079
-  # 2:  TRUE 2391
-  # 3: FALSE  291
+
   
-  # NA´s
-  # ----
-  link.may[,.N,.(NAa=is.na(edadiniciodisca12A), NAb=is.na(edadiniciodisca12B), NAc=is.na(edadiniciodisca12C))]
-  #      NAa   NAb   NAc    N
-  # 1: FALSE  TRUE FALSE  159
-  # 2: FALSE FALSE FALSE 2609
-  # 3: FALSE FALSE  TRUE  913
-  # 4: FALSE  TRUE  TRUE  665
-  # 5:  TRUE FALSE  TRUE  150
-  # 6:  TRUE  TRUE  TRUE   83
-  # 7:  TRUE FALSE FALSE  146
-  # 8:  TRUE  TRUE FALSE   36
-  
-  ##############################################################################################################
+##############################################################################################################
   
 ### 3. Cluster analysis
   

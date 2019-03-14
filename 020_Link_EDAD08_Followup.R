@@ -107,7 +107,7 @@ class(link.may50)
 link.may50 <- data.table(link.may50)
 link.may50[,enlazado:=!is.na(estado)]
 # Choose the linked ones and the ones with age information
-link.may50 <- link.may50 %>% filter(!is.na(EDAD)) %>% filter(enlazado==T) %>%  ### 38985 individuals (65 +, followed up)
+link.may50 <- link.may50 %>% filter(!is.na(EDAD)) %>% filter(enlazado==T) %>%  
   # and make an event variable with the sure information we have (death year and month)
   mutate(event=ifelse(!is.na(anodef),1,0))
 
@@ -125,19 +125,19 @@ link.may50 <- link.may50 %>%
 hist(link.may50$age.ex, breaks = 50) # looks ok! (high increase at age 60 is caused by large numbers of censored 50 year old)
 
 # Look at the entry to exit age relationship 
-link.may50 %>% count(EDAD < age.ex)         # bien!
+link.may50 %>% dplyr::count(EDAD < age.ex)         # bien!
 
 # Missing-ness on central variables (sex, onset age disability, onset age dependency)
 # -----------------------------------------------------------------------------------
 
 # Select the individuals which have experienced care episodes
-link.may50 %>% count(!is.na(Edadinicio_cuidado))
+link.may50 %>% dplyr::count(!is.na(Edadinicio_cuidado))
 
 # disability
 # DISCA 44 - mix between functional limitations (de piel a dentro) and (I)ADLs (de piel a fuera)
-link.may50 %>% count(!is.na(EdadInicioDisca44))
+link.may50 %>% dplyr::count(!is.na(EdadInicioDisca44))
 # DISCA 13 - selection of 8 ADLs and 5 IADLs
-link.may50 %>% count(!is.na(EdadInicioDisca13))
+link.may50 %>% dplyr::count(!is.na(EdadInicioDisca13))
 
 # combinations
 link.may50 <- data.table(link.may50)
@@ -148,19 +148,12 @@ link.may50[!is.na(EdadInicioDisca13), .N, .(as.numeric(EdadInicioDisca13)>=50)] 
 link.may50[is.na(EdadInicioDisca13), .N, .(as.numeric(EdadInicioDisca44)>=50)] #  88 cases   (we might be able to recover)
 
 
-link.may50[, .N, .(as.numeric(!is.na(EdadInicioDisca13))<=as.numeric(!is.na(Edadinicio_cuidado)))]  # todos
-
-# Exclude the 133 cases that haven´t experienced a DISCA13 ADL limitations
-# link.may50 <- link.may50 %>% filter(!is.na(EdadInicioDisca13))
-
 class(link.may50$EdadInicioDisca13)
 link.may50$EdadInicioDisca13 <- as.numeric(as.factor(link.may50$EdadInicioDisca13))
 
 table(link.may50$EdadInicioDisca13>=50)
 
 ## Create a new DISCA 13 Entry AGE
-
-table(link.may50$Disca13) # only 97 cases! (less than when using the age variable)
 
 link.may50 <- link.may50 %>% 
   mutate(DIS_1_A = ifelse(!is.na(MOV_18_5), MOV_18_5, 999)) %>% 
@@ -177,13 +170,125 @@ link.may50 <- link.may50 %>%
   mutate(DIS_12_A = ifelse(!is.na(VDOM_37_5), VDOM_37_5, 999)) %>% 
   mutate(DIS_13_A = ifelse(!is.na(VDOM_38_5), VDOM_38_5, 999)) %>% 
   
-  ## Now compute the column minimum (gives the entry age to severity)
-  mutate(DISCA13_AGE = pmin(DIS_1_A, DIS_2_A, DIS_3_A, DIS_4_A, DIS_5_A, DIS_6_A,
+## Now compute the column minimum (gives the entry age to severity)
+mutate(DISCA13_AGE = pmin(DIS_1_A, DIS_2_A, DIS_3_A, DIS_4_A, DIS_5_A, DIS_6_A,
                             DIS_7_A, DIS_8_A, DIS_9_A, DIS_10_A, DIS_11_A, DIS_12_A,
                             DIS_13_A)) 
   
 
+link.may50 <- link.may50 %>% 
+  mutate(DIS_1_A = ifelse(!is.na(MOV_18_5), MOV_18_5, 999)) %>% 
+  mutate(DIS_2_A = ifelse(!is.na(MOV_20_5), MOV_20_5, 999)) %>%
+  mutate(DIS_3_A = ifelse(!is.na(MOV_21_5), MOV_21_5, 999)) %>% 
+  mutate(DIS_4_A = ifelse(!is.na(MOV_22_5), MOV_22_5, 999)) %>% 
+  mutate(DIS_5_A = ifelse(!is.na(AUT_27_5), AUT_27_5, 999)) %>% 
+  mutate(DIS_6_A = ifelse(!is.na(AUT_28_5), AUT_28_5, 999)) %>% 
+  mutate(DIS_7_A = ifelse(!is.na(AUT_29_5), AUT_29_5, 999)) %>% 
+  mutate(DIS_8_A = ifelse(!is.na(AUT_30_5), AUT_30_5, 999)) %>% 
+  mutate(DIS_9_A = ifelse(!is.na(AUT_32_5), AUT_32_5, 999)) %>% 
+  mutate(DIS_10_A = ifelse(!is.na(AUT_33_5), AUT_33_5, 999)) %>% 
+  mutate(DIS_11_A = ifelse(!is.na(VDOM_36_5), VDOM_36_5, 999)) %>% 
+  mutate(DIS_12_A = ifelse(!is.na(VDOM_37_5), VDOM_37_5, 999)) %>% 
+  mutate(DIS_13_A = ifelse(!is.na(VDOM_38_5), VDOM_38_5, 999)) %>% 
+  
+## Now compute the column minimum (gives the entry age to severity)
+mutate(DISCA13_AGE = pmin(DIS_1_A, DIS_2_A, DIS_3_A, DIS_4_A, DIS_5_A, DIS_6_A,
+                            DIS_7_A, DIS_8_A, DIS_9_A, DIS_10_A, DIS_11_A, DIS_12_A,
+                            DIS_13_A))
 
+# link.may50 <- link.may50 %>% filter(DISCA13_AGE>=50) %>% filter(DISCA13_AGE<999)
+# link.may50 <- link.may50 %>% filter(Edadinicio_disca44>=50)
+
+# Find the minimum age from all (I)ADLs
+
+link.may50 <- link.may50 %>% mutate(FIRST_DIS = ifelse(DISCA13_AGE==DIS_1_A,"Changing the body posture", 
+                                                       ifelse(DISCA13_AGE==DIS_2_A, "Walking and moving inside the house",
+                                                              ifelse(DISCA13_AGE==DIS_3_A, "Walking and moving outside",
+                                                                     ifelse(DISCA13_AGE==DIS_4_A, "Sitting down and using public transport",
+                                                                            ifelse(DISCA13_AGE==DIS_5_A, "Wash and dry different body parts",
+                                                                                   ifelse(DISCA13_AGE==DIS_6_A, "Basic hygene",
+                                                                                          ifelse(DISCA13_AGE==DIS_7_A, "Urination",
+                                                                                                 ifelse(DISCA13_AGE==DIS_8_A, "Going to the toilet",
+                                                                                                        ifelse(DISCA13_AGE==DIS_9_A, "To dress and undress",
+                                                                                                               ifelse(DISCA13_AGE==DIS_10_A, "Eating and drinking",
+                                                                                                                      ifelse(DISCA13_AGE==DIS_11_A, "Shopping (groceries)",
+                                                                                                                             ifelse(DISCA13_AGE==DIS_12_A, "Preparing food/cooking",
+                                                                                                                                    ifelse(DISCA13_AGE==DIS_13_A, "Household task (cleaning the house)", "NONE"))))))))))))))     
+
+table(link.may50$FIRST_DIS, useNA = "always")
+
+
+
+
+## 2.1. Onset of incapacity of an activity of daily living (by severity)
+## ---------------------------------------------------------------------
+
+# For first onset age use "EdadInicioDisca13"
+
+# Minimum age for onset of one of the 13 (I)ADLs (Using the age information for single disabilities)
+
+table(link.may50$MOV_18_2)
+
+# recode all severity variables (DISCA 13) in two groups
+link.may50 <- link.may50 %>%
+  # change posture/move
+  mutate(DIS_1_S = ifelse(MOV_18_2=="Con dificultad moderada", "mild", "severe")) %>% 
+  # walking and moving inside
+  mutate(DIS_2_S = ifelse(MOV_20_2=="Con dificultad moderada", "mild", "severe")) %>%
+  # walking and moving outside
+  mutate(DIS_3_S = ifelse(MOV_21_2=="Con dificultad moderada", "mild", "severe")) %>% 
+  # Sitting down & using public transport
+  mutate(DIS_4_S = ifelse(MOV_22_2=="Con dificultad moderada", "mild", "severe")) %>% 
+  # washing and drying
+  mutate(DIS_5_S = ifelse(AUT_27_2=="Con dificultad moderada", "mild", "severe")) %>% 
+  # basic hygene
+  mutate(DIS_6_S = ifelse(AUT_28_2=="Con dificultad moderada", "mild", "severe")) %>% 
+  # urinating
+  mutate(DIS_7_S = ifelse(AUT_29_2=="Con dificultad moderada", "mild", "severe")) %>% 
+  # bathroom
+  mutate(DIS_8_S = ifelse(AUT_30_2=="Con dificultad moderada", "mild", "severe")) %>% 
+  # dressing and undressing
+  mutate(DIS_9_S = ifelse(AUT_32_2=="Con dificultad moderada", "mild", "severe")) %>% 
+  # eating and drinking
+  mutate(DIS_10_S = ifelse(AUT_33_2=="Con dificultad moderada", "mild", "severe")) %>% 
+  # organising shopping for groceries
+  mutate(DIS_11_S = ifelse(VDOM_36_2=="Con dificultad moderada", "mild", "severe")) %>% 
+  # preparing food
+  mutate(DIS_12_S = ifelse(VDOM_37_2=="Con dificultad moderada", "mild", "severe")) %>% 
+  # household tasks
+  mutate(DIS_13_S = ifelse(AUT_28_2=="Con dificultad moderada", "mild", "severe"))
+# recode entry age into first severe limitation (DISCA 13)
+link.may50 <- link.may50 %>% 
+  mutate(DIS_1_SA = ifelse(DIS_1_S=="severe", MOV_18_5, 999)) %>% mutate(DIS_1_SA = ifelse(is.na(DIS_1_SA),999, DIS_1_SA)) %>% 
+  mutate(DIS_2_SA = ifelse(DIS_2_S=="severe", MOV_20_5, 999)) %>% mutate(DIS_2_SA = ifelse(is.na(DIS_2_SA),999, DIS_2_SA)) %>%
+  mutate(DIS_3_SA = ifelse(DIS_3_S=="severe", MOV_21_5, 999)) %>% mutate(DIS_3_SA = ifelse(is.na(DIS_3_SA),999, DIS_3_SA)) %>%
+  mutate(DIS_4_SA = ifelse(DIS_4_S=="severe", MOV_22_5, 999)) %>% mutate(DIS_4_SA = ifelse(is.na(DIS_4_SA),999, DIS_4_SA)) %>%
+  mutate(DIS_5_SA = ifelse(DIS_5_S=="severe", AUT_27_5, 999)) %>% mutate(DIS_5_SA = ifelse(is.na(DIS_5_SA),999, DIS_5_SA)) %>%
+  mutate(DIS_6_SA = ifelse(DIS_6_S=="severe", AUT_28_5, 999)) %>% mutate(DIS_6_SA = ifelse(is.na(DIS_6_SA),999, DIS_6_SA)) %>%
+  mutate(DIS_7_SA = ifelse(DIS_7_S=="severe", AUT_29_5, 999)) %>% mutate(DIS_7_SA = ifelse(is.na(DIS_7_SA),999, DIS_7_SA)) %>%
+  mutate(DIS_8_SA = ifelse(DIS_8_S=="severe", AUT_30_5, 999)) %>% mutate(DIS_8_SA = ifelse(is.na(DIS_8_SA),999, DIS_8_SA)) %>%
+  mutate(DIS_9_SA = ifelse(DIS_9_S=="severe", AUT_32_5, 999)) %>% mutate(DIS_9_SA = ifelse(is.na(DIS_9_SA),999, DIS_9_SA)) %>%
+  mutate(DIS_10_SA = ifelse(DIS_10_S=="severe", AUT_33_5, 999)) %>% mutate(DIS_10_SA = ifelse(is.na(DIS_10_SA),999, DIS_10_SA)) %>%
+  mutate(DIS_11_SA = ifelse(DIS_11_S=="severe", VDOM_36_5, 999)) %>% mutate(DIS_11_SA = ifelse(is.na(DIS_11_SA),999, DIS_11_SA)) %>%
+  mutate(DIS_12_SA = ifelse(DIS_12_S=="severe", VDOM_37_5, 999)) %>% mutate(DIS_12_SA = ifelse(is.na(DIS_12_SA),999, DIS_12_SA)) %>%
+  mutate(DIS_13_SA = ifelse(DIS_13_S=="severe", VDOM_38_5, 999)) %>% mutate(DIS_13_SA = ifelse(is.na(DIS_13_SA),999, DIS_13_SA)) %>% 
+  
+  ## Now compute the column minimum (gives the entry age to severity)
+  mutate(EntryGrave13 =pmin(DIS_1_SA, DIS_2_SA, DIS_3_SA, DIS_4_SA, DIS_5_SA, DIS_6_SA,
+                            DIS_7_SA, DIS_8_SA, DIS_9_SA, DIS_10_SA, DIS_11_SA, DIS_12_SA,
+                            DIS_13_SA))
+
+
+summary(link.may50$EntryGrave13)
+hist(link.may50$EntryGrave13[link.may50$EntryGrave13<999])
+
+# For later purposes the 999 have to be set to NAs
+link.may50 <- link.may50 %>% mutate(EntryGrave13=ifelse(EntryGrave13==999, NA, EntryGrave13))
+
+# For later purposes categorize
+link.may50 <- link.may50 %>% mutate(EntryGrave13_cat= ifelse(is.na(EntryGrave13),"no severe disability",
+                                                         ifelse(EntryGrave13 <=65, "$<$ 65", ifelse(EntryGrave13<=75,"65-75",
+                                                                                                    ifelse(EntryGrave13 <=85, "75-85", "85+")))))
 
 
 # Multi- and co- morbidity variables
@@ -237,15 +342,16 @@ link.may50 <- link.may50 %>% mutate(DailyAct = ifelse(K_7=="Sí", "Daily activit
 
 
 ######### Extract just the cases needed! ############
+link.may50 %>% dplyr::count(DISCA13_AGE>=50)
+link.may50 %>% dplyr::count(DISCA13_AGE<999)
 
-# link.may50 <- link.may50 %>% filter(DISCA13_AGE>=50) %>% filter(DISCA13_AGE<999)
+link.may50 <- link.may50 %>% filter(DISCA13_AGE>=50) %>% filter(DISCA13_AGE<999)
 
 ######### Extract just the cases needed! ############
 
 # -----------------------------------------------
 # save(link.may50, file='010_mayor50.link.RData')
 # -----------------------------------------------
-
 
 
 ################################################
