@@ -64,14 +64,14 @@ link.may <- data.table(link.may)
 
 # DISCA 13
 
-link.may$EdadInicioDisca13 <- as.numeric(link.may$EdadInicioDisca13)
+link.may$DISCA13_AGE <- as.numeric(link.may$DISCA13_AGE)
 
-link.may %>% count(EdadInicioDisca13 < age.ex)
-link.may %>% count(EdadInicioDisca13 > EDAD)              ### THIS SHOULD NOT BE POSSIBLE (91 cases)
+link.may %>% dplyr::count(DISCA13_AGE < age.ex)
+link.may %>% dplyr::count(DISCA13_AGE > EDAD)              ### THIS SHOULD NOT BE POSSIBLE (151 cases)
 
 ## FIX (Listwise deletion)
 
-link.may <- link.may %>% filter(EdadInicioDisca13 <= EDAD)  
+link.may <- link.may %>% filter(DISCA13_AGE <= EDAD)  
 
 
 # Estado - A = censored , B = Bajas (death and migration)
@@ -168,7 +168,7 @@ summary(abc)
   
   ## 3.1. Subdata set with information on Age, Entry to disability, A, B, C, and dependency
   ## ---------------------------------------------------------------------------------------
-  tra_may <- link.may %>% select(Id, SEXO, EDAD, EdadInicioDisca44, EdadInicioDisca13, Edadinicio_cuidado, age.ex, EntryGrave13, DISCA13_AGE) # edadiniciodisca12A,
+  tra_may <- link.may %>% dplyr::select(Id, SEXO, EDAD, EdadInicioDisca44, DISCA13_AGE, Edadinicio_cuidado, age.ex, EntryGrave13, DISCA13_AGE) # edadiniciodisca12A,
   
   
 

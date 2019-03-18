@@ -24,107 +24,109 @@ library(stargazer)
 # 1. load data - Disability Data
 # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%% #
 
-load(file='datasets/010_mayor50_LT.RData')
+# load(file='datasets/010_mayor50_LT.RData')
+
+load(file='010_mayor50.link.RData')
 
 
-# %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% #
-# 2. prepare variables (change references and categories)
-# %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% #
-
-# 2.1. Age at first DISCA 13 disability
-link.may50 <- link.may50 %>% 
-  mutate(DIS_1_A = ifelse(!is.na(MOV_18_5), MOV_18_5, 999)) %>% 
-  mutate(DIS_2_A = ifelse(!is.na(MOV_20_5), MOV_20_5, 999)) %>%
-  mutate(DIS_3_A = ifelse(!is.na(MOV_21_5), MOV_21_5, 999)) %>% 
-  mutate(DIS_4_A = ifelse(!is.na(MOV_22_5), MOV_22_5, 999)) %>% 
-  mutate(DIS_5_A = ifelse(!is.na(AUT_27_5), AUT_27_5, 999)) %>% 
-  mutate(DIS_6_A = ifelse(!is.na(AUT_28_5), AUT_28_5, 999)) %>% 
-  mutate(DIS_7_A = ifelse(!is.na(AUT_29_5), AUT_29_5, 999)) %>% 
-  mutate(DIS_8_A = ifelse(!is.na(AUT_30_5), AUT_30_5, 999)) %>% 
-  mutate(DIS_9_A = ifelse(!is.na(AUT_32_5), AUT_32_5, 999)) %>% 
-  mutate(DIS_10_A = ifelse(!is.na(AUT_33_5), AUT_33_5, 999)) %>% 
-  mutate(DIS_11_A = ifelse(!is.na(VDOM_36_5), VDOM_36_5, 999)) %>% 
-  mutate(DIS_12_A = ifelse(!is.na(VDOM_37_5), VDOM_37_5, 999)) %>% 
-  mutate(DIS_13_A = ifelse(!is.na(VDOM_38_5), VDOM_38_5, 999)) %>% 
-  
-  ## Now compute the column minimum (gives the entry age to severity)
-  mutate(DISCA13_AGE = pmin(DIS_1_A, DIS_2_A, DIS_3_A, DIS_4_A, DIS_5_A, DIS_6_A,
-                            DIS_7_A, DIS_8_A, DIS_9_A, DIS_10_A, DIS_11_A, DIS_12_A,
-                            DIS_13_A))
-
-# link.may50 <- link.may50 %>% filter(DISCA13_AGE>=50) %>% filter(DISCA13_AGE<999)
-# link.may50 <- link.may50 %>% filter(Edadinicio_disca44>=50)
-
-# 2.2 Find the minimum age from all (I)ADLs
-
-link.may50 <- link.may50 %>% mutate(FIRST_DIS = ifelse(DISCA13_AGE==DIS_1_A,"Changing the body posture", 
-                                                       ifelse(DISCA13_AGE==DIS_2_A, "Walking and moving inside the house",
-                                                              ifelse(DISCA13_AGE==DIS_3_A, "Walking and moving outside",
-                                                                     ifelse(DISCA13_AGE==DIS_4_A, "Sitting down and using public transport",
-                                                                            ifelse(DISCA13_AGE==DIS_5_A, "Wash and dry different body parts",
-                                                                                   ifelse(DISCA13_AGE==DIS_6_A, "Basic hygene",
-                                                                                          ifelse(DISCA13_AGE==DIS_7_A, "Urination",
-                                                                                                 ifelse(DISCA13_AGE==DIS_8_A, "Going to the toilet",
-                                                                                                        ifelse(DISCA13_AGE==DIS_9_A, "To dress and undress",
-                                                                                                               ifelse(DISCA13_AGE==DIS_10_A, "Eating and drinking",
-                                                                                                                      ifelse(DISCA13_AGE==DIS_11_A, "Shopping (groceries)",
-                                                                                                                             ifelse(DISCA13_AGE==DIS_12_A, "Preparing food/cooking",
-                                                                                                                                    ifelse(DISCA13_AGE==DIS_13_A, "Household task (cleaning the house)", "NONE"))))))))))))))     
-
-table(link.may50$FIRST_DIS, useNA="always")
-
-# 2.2.2 Make dummy variables
-
-link.may50 <- link.may50 %>% mutate(FIRST_DIS_1 = ifelse(FIRST_DIS=="Changing the body posture", 1, 0)) %>% 
-  mutate(FIRST_DIS_2 = ifelse(FIRST_DIS=="Walking and moving inside the house", 1, 0)) %>% 
-  mutate(FIRST_DIS_3 = ifelse(FIRST_DIS=="Walking and moving outside", 1, 0)) %>% 
-  mutate(FIRST_DIS_4 = ifelse(FIRST_DIS=="Sitting down and using public transport", 1, 0)) %>% 
-  mutate(FIRST_DIS_5 = ifelse(FIRST_DIS=="Wash and dry different body parts", 1, 0)) %>% 
-  mutate(FIRST_DIS_6 = ifelse(FIRST_DIS=="Basic hygene", 1, 0)) %>% 
-  mutate(FIRST_DIS_7 = ifelse(FIRST_DIS=="Urination", 1, 0)) %>% 
-  mutate(FIRST_DIS_8 = ifelse(FIRST_DIS=="Going to the toilet", 1, 0)) %>% 
-  mutate(FIRST_DIS_9 = ifelse(FIRST_DIS=="To dress and undress", 1, 0)) %>% 
-  mutate(FIRST_DIS_10 = ifelse(FIRST_DIS=="Eating and drinking", 1, 0)) %>% 
-  mutate(FIRST_DIS_11 = ifelse(FIRST_DIS=="Shopping (groceries)", 1, 0)) %>% 
-  mutate(FIRST_DIS_12 = ifelse(FIRST_DIS=="Preparing food/cooking", 1, 0)) %>% 
-  mutate(FIRST_DIS_13 = ifelse(FIRST_DIS=="Household task (cleaning the house)", 1, 0))
-
-
-  # 2.3 Accident in the last 12 months #
-# ---------------------------------- #
-
-class(link.may50$K_4)   
-table(link.may50$K_4, useNA = "always")
-
-link.may50 <- link.may50 %>% mutate(Accident12 = ifelse(K_4=="Sí", "Accident 12 mo", ifelse(K_4=="NC", NA, "No Accident")))
-
-# 2.4 Body and attitude #
-# ---------------------- #
-table(link.may50$K_7, useNA = "always")
-
-link.may50 <- link.may50 %>% mutate(DailyAct = ifelse(K_7=="Sí", "Daily activity", ifelse(K_7=="NC", NA, "No daily act.")))
-
-
-###### 2.45 Co-morbidity
-
-# Cardiovascular diseases (includes stroke)
-link.may50 <- link.may50 %>% mutate(D1_CVD = ifelse(K_3_2=="Sí" | K_3_3=="Sí" | K_3_5=="Sí","CVD", "No CVD")) %>% 
-  # Now bring the missings back
-  mutate(D1_CVD = ifelse(K_3_2=="NC" & K_3_3=="NC" & K_3_5=="NC", NA, D1_CVD))
-
-# Cancer
-table(link.may50$K_3_12)
-link.may50 <- link.may50 %>% mutate(D2_C = ifelse(K_3_12!="Sí","Cancer", ifelse(K_3_12=="NC", NA, "No Cancer")))
-
-# Mental diseases
-table(link.may50$K_3_15)
-table(link.may50$K_3_16)
-table(link.may50$K_3_17)
-link.may50 <- link.may50 %>% mutate(D3_MD = ifelse(K_3_15=="Sí"| K_3_16=="Sí" | K_3_17=="Sí","Mental disease", "No mental disease")) %>% 
-  # Now bring the missings back
-  mutate(D3_MD = ifelse(K_3_15=="NC" & K_3_16=="NC" & K_3_17=="NC", NA, D3_MD))                    
-
-
+# # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% #
+# # 2. prepare variables (change references and categories)
+# # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% #
+# 
+# # 2.1. Age at first DISCA 13 disability
+# link.may50 <- link.may50 %>% 
+#   mutate(DIS_1_A = ifelse(!is.na(MOV_18_5), MOV_18_5, 999)) %>% 
+#   mutate(DIS_2_A = ifelse(!is.na(MOV_20_5), MOV_20_5, 999)) %>%
+#   mutate(DIS_3_A = ifelse(!is.na(MOV_21_5), MOV_21_5, 999)) %>% 
+#   mutate(DIS_4_A = ifelse(!is.na(MOV_22_5), MOV_22_5, 999)) %>% 
+#   mutate(DIS_5_A = ifelse(!is.na(AUT_27_5), AUT_27_5, 999)) %>% 
+#   mutate(DIS_6_A = ifelse(!is.na(AUT_28_5), AUT_28_5, 999)) %>% 
+#   mutate(DIS_7_A = ifelse(!is.na(AUT_29_5), AUT_29_5, 999)) %>% 
+#   mutate(DIS_8_A = ifelse(!is.na(AUT_30_5), AUT_30_5, 999)) %>% 
+#   mutate(DIS_9_A = ifelse(!is.na(AUT_32_5), AUT_32_5, 999)) %>% 
+#   mutate(DIS_10_A = ifelse(!is.na(AUT_33_5), AUT_33_5, 999)) %>% 
+#   mutate(DIS_11_A = ifelse(!is.na(VDOM_36_5), VDOM_36_5, 999)) %>% 
+#   mutate(DIS_12_A = ifelse(!is.na(VDOM_37_5), VDOM_37_5, 999)) %>% 
+#   mutate(DIS_13_A = ifelse(!is.na(VDOM_38_5), VDOM_38_5, 999)) %>% 
+#   
+#   ## Now compute the column minimum (gives the entry age to severity)
+#   mutate(DISCA13_AGE = pmin(DIS_1_A, DIS_2_A, DIS_3_A, DIS_4_A, DIS_5_A, DIS_6_A,
+#                             DIS_7_A, DIS_8_A, DIS_9_A, DIS_10_A, DIS_11_A, DIS_12_A,
+#                             DIS_13_A))
+# 
+# # link.may50 <- link.may50 %>% filter(DISCA13_AGE>=50) %>% filter(DISCA13_AGE<999)
+# # link.may50 <- link.may50 %>% filter(Edadinicio_disca44>=50)
+# 
+# # 2.2 Find the minimum age from all (I)ADLs
+# 
+# link.may50 <- link.may50 %>% mutate(FIRST_DIS = ifelse(DISCA13_AGE==DIS_1_A,"Changing the body posture", 
+#                                                        ifelse(DISCA13_AGE==DIS_2_A, "Walking and moving inside the house",
+#                                                               ifelse(DISCA13_AGE==DIS_3_A, "Walking and moving outside",
+#                                                                      ifelse(DISCA13_AGE==DIS_4_A, "Sitting down and using public transport",
+#                                                                             ifelse(DISCA13_AGE==DIS_5_A, "Wash and dry different body parts",
+#                                                                                    ifelse(DISCA13_AGE==DIS_6_A, "Basic hygene",
+#                                                                                           ifelse(DISCA13_AGE==DIS_7_A, "Urination",
+#                                                                                                  ifelse(DISCA13_AGE==DIS_8_A, "Going to the toilet",
+#                                                                                                         ifelse(DISCA13_AGE==DIS_9_A, "To dress and undress",
+#                                                                                                                ifelse(DISCA13_AGE==DIS_10_A, "Eating and drinking",
+#                                                                                                                       ifelse(DISCA13_AGE==DIS_11_A, "Shopping (groceries)",
+#                                                                                                                              ifelse(DISCA13_AGE==DIS_12_A, "Preparing food/cooking",
+#                                                                                                                                     ifelse(DISCA13_AGE==DIS_13_A, "Household task (cleaning the house)", "NONE"))))))))))))))     
+# 
+# table(link.may50$FIRST_DIS, useNA="always")
+# 
+# # 2.2.2 Make dummy variables
+# 
+# link.may50 <- link.may50 %>% mutate(FIRST_DIS_1 = ifelse(FIRST_DIS=="Changing the body posture", 1, 0)) %>% 
+#   mutate(FIRST_DIS_2 = ifelse(FIRST_DIS=="Walking and moving inside the house", 1, 0)) %>% 
+#   mutate(FIRST_DIS_3 = ifelse(FIRST_DIS=="Walking and moving outside", 1, 0)) %>% 
+#   mutate(FIRST_DIS_4 = ifelse(FIRST_DIS=="Sitting down and using public transport", 1, 0)) %>% 
+#   mutate(FIRST_DIS_5 = ifelse(FIRST_DIS=="Wash and dry different body parts", 1, 0)) %>% 
+#   mutate(FIRST_DIS_6 = ifelse(FIRST_DIS=="Basic hygene", 1, 0)) %>% 
+#   mutate(FIRST_DIS_7 = ifelse(FIRST_DIS=="Urination", 1, 0)) %>% 
+#   mutate(FIRST_DIS_8 = ifelse(FIRST_DIS=="Going to the toilet", 1, 0)) %>% 
+#   mutate(FIRST_DIS_9 = ifelse(FIRST_DIS=="To dress and undress", 1, 0)) %>% 
+#   mutate(FIRST_DIS_10 = ifelse(FIRST_DIS=="Eating and drinking", 1, 0)) %>% 
+#   mutate(FIRST_DIS_11 = ifelse(FIRST_DIS=="Shopping (groceries)", 1, 0)) %>% 
+#   mutate(FIRST_DIS_12 = ifelse(FIRST_DIS=="Preparing food/cooking", 1, 0)) %>% 
+#   mutate(FIRST_DIS_13 = ifelse(FIRST_DIS=="Household task (cleaning the house)", 1, 0))
+# 
+# 
+#   # 2.3 Accident in the last 12 months #
+# # ---------------------------------- #
+# 
+# class(link.may50$K_4)   
+# table(link.may50$K_4, useNA = "always")
+# 
+# link.may50 <- link.may50 %>% mutate(Accident12 = ifelse(K_4=="Sí", "Accident 12 mo", ifelse(K_4=="NC", NA, "No Accident")))
+# 
+# # 2.4 Body and attitude #
+# # ---------------------- #
+# table(link.may50$K_7, useNA = "always")
+# 
+# link.may50 <- link.may50 %>% mutate(DailyAct = ifelse(K_7=="Sí", "Daily activity", ifelse(K_7=="NC", NA, "No daily act.")))
+# 
+# 
+# ###### 2.45 Co-morbidity
+# 
+# # Cardiovascular diseases (includes stroke)
+# link.may50 <- link.may50 %>% mutate(D1_CVD = ifelse(K_3_2=="Sí" | K_3_3=="Sí" | K_3_5=="Sí","CVD", "No CVD")) %>% 
+#   # Now bring the missings back
+#   mutate(D1_CVD = ifelse(K_3_2=="NC" & K_3_3=="NC" & K_3_5=="NC", NA, D1_CVD))
+# 
+# # Cancer
+# table(link.may50$K_3_12)
+# link.may50 <- link.may50 %>% mutate(D2_C = ifelse(K_3_12!="Sí","Cancer", ifelse(K_3_12=="NC", NA, "No Cancer")))
+# 
+# # Mental diseases
+# table(link.may50$K_3_15)
+# table(link.may50$K_3_16)
+# table(link.may50$K_3_17)
+# link.may50 <- link.may50 %>% mutate(D3_MD = ifelse(K_3_15=="Sí"| K_3_16=="Sí" | K_3_17=="Sí","Mental disease", "No mental disease")) %>% 
+#   # Now bring the missings back
+#   mutate(D3_MD = ifelse(K_3_15=="NC" & K_3_16=="NC" & K_3_17=="NC", NA, D3_MD))                    
+# 
+# 
 
 # 2.5 Separate analysis by sex
 link.may_M <- link.may50 %>% filter(SEXO=="Varón") %>% mutate(Sex="Male")
@@ -191,35 +193,40 @@ link.may_F <- within(link.may_F, Accident12 <- relevel(Accident12, ref = "No Acc
 
 # 2.10 Co-morbidity variables
 # --------------------------
+link.may_M <- within(link.may_M, CoMorb <- relevel(CoMorb, ref = "no multi morbidity")) 
+link.may_F <- within(link.may_F, CoMorb <- relevel(CoMorb, ref = "no multi morbidity")) 
+
 # CVD
-link.may_M <- link.may_M %>% mutate(D1_CVD = as.factor(D1_CVD))
-link.may_F <- link.may_F %>% mutate(D1_CVD = as.factor(D1_CVD))
+# link.may_M <- link.may_M %>% mutate(D1_CVD = as.factor(D1_CVD))
+# link.may_F <- link.may_F %>% mutate(D1_CVD = as.factor(D1_CVD))
+# 
+# link.may_M <- within(link.may_M, D1_CVD <- relevel(D1_CVD, ref = "No CVD")) 
+# link.may_F <- within(link.may_F, D1_CVD <- relevel(D1_CVD, ref = "No CVD")) 
+# 
+# # Mental diseases
+# link.may_M <- link.may_M %>% mutate(D3_MD = as.factor(D3_MD))
+# link.may_F <- link.may_F %>% mutate(D3_MD = as.factor(D3_MD))
+# 
+# link.may_M <- within(link.may_M, D3_MD <- relevel(D3_MD, ref = "No mental disease")) 
+# link.may_F <- within(link.may_F, D3_MD <- relevel(D3_MD, ref = "No mental disease"))
 
-link.may_M <- within(link.may_M, D1_CVD <- relevel(D1_CVD, ref = "No CVD")) 
-link.may_F <- within(link.may_F, D1_CVD <- relevel(D1_CVD, ref = "No CVD")) 
+# 2.11. Disability Count - progressive vs. catastrophic
+# -----------------------------------------------------
 
-# Mental diseases
-link.may_M <- link.may_M %>% mutate(D3_MD = as.factor(D3_MD))
-link.may_F <- link.may_F %>% mutate(D3_MD = as.factor(D3_MD))
-
-link.may_M <- within(link.may_M, D3_MD <- relevel(D3_MD, ref = "No mental disease")) 
-link.may_F <- within(link.may_F, D3_MD <- relevel(D3_MD, ref = "No mental disease"))
-
+link.may_M <- within(link.may_M, CatPro <- relevel(CatPro, ref = "progressive")) 
+link.may_F <- within(link.may_F, CatPro <- relevel(CatPro, ref = "progressive"))
 # 2.11 Missing values  !!! Still needs to be fixed !!!!!!!!!!!!!!!!!!!!!!!!!!
 # -------------------
 library(Amelia)
 
 # Make data set with variables for the analysis
-training.data_M <- link.may_M %>% select(EDAD, Disca13, DISCA13_AGE, FIRST_DIS_1, FIRST_DIS_2, FIRST_DIS_3, FIRST_DIS_4,
-                                           FIRST_DIS_5, FIRST_DIS_6, FIRST_DIS_7, FIRST_DIS_8, FIRST_DIS_9, FIRST_DIS_10, 
-                                           FIRST_DIS_11, FIRST_DIS_12, civil, education, Accident12, DailyAct, D1_CVD, 
-                                           D2_C, D3_MD)
+training.data_M <- link.may_M %>% select(EDAD, CoMorb, CatPro, EntryGrave13, ADL, civil, education, Accident12, DailyAct)
 
 missmap(training.data_M, main = "Missing values vs observed")
 
 
 
-
++ ADL  + CoMorb + EntryGrave13 + Accident12 + DailyAct + civil + education
 ### 3. Logistic Regression (dependientes)
 ### -------------------------------------
 
@@ -278,31 +285,24 @@ summary(model_M1)
 # females 
 
   # Household tasks excluded as reference dummy
-model_F2 <- glm(DEP ~ EDAD + Disca13 + DISCA13_AGE + FIRST_DIS_1 + FIRST_DIS_2 +  FIRST_DIS_3  +  FIRST_DIS_4 +
-                  FIRST_DIS_5 + FIRST_DIS_6 + FIRST_DIS_7 + FIRST_DIS_8 + FIRST_DIS_9 + FIRST_DIS_10 + FIRST_DIS_11 +
-                  FIRST_DIS_12 + civil + education,
+model_F2 <- glm(DEP ~ EDAD + CatPro + ADL  + CoMorb + Accident12 + DailyAct + civil + education,
                 family=binomial(link='logit'),data=link.may_F)
 # + Accident12 + DailyAct + D1_CVD + D2_C + D3_MD
 
 summary(model_F2)
 
 # males
-model_M2 <- glm(DEP ~ EDAD + Disca13 + DISCA13_AGE + FIRST_DIS_1 + FIRST_DIS_2 + FIRST_DIS_3  +  FIRST_DIS_4 +
-                  FIRST_DIS_5 + FIRST_DIS_6 + FIRST_DIS_7 + FIRST_DIS_8 + FIRST_DIS_9 + FIRST_DIS_10 + FIRST_DIS_11 +
-                  FIRST_DIS_12 + civil + education ,family=binomial(link='logit'),data=link.may_M)
+model_M2 <- glm(DEP ~ EDAD + CatPro + ADL  + CoMorb + Accident12 + DailyAct + civil + education,
+                family=binomial(link='logit'),data=link.may_M)
 # + Accident12 + DailyAct + D1_CVD + D2_C + D3_MD
 summary(model_M2)
 
 # Put the output together
-stargazer(model_F1, model_F2, model_M1, model_M2, title="Logistic Regression Models",no.space=F,
+stargazer(model_F2, model_M2, title="Logistic Regression Models",no.space=F,
           ci=TRUE, ci.level=0.95, omit.stat=c("max.rsq"),dep.var.labels=c("Relative risk of being dependent"),
-          covariate.labels=c("Age","Disca 13", "Onset Disca 13", "First Dis 1 = Changing the body posture",
-                             "First Dis 2 = Moving inside", "First Dis 3 = Moving outside",
-                             "First Dis 4 = Sitting down", "First Dis 5 = Wash and dry",
-                             "First Dis 6 = Basic hygene", "First Dis 7 = Urination",
-                             "First Dis 8 = Going to the toilet", "First Dis 9 = Dress/undress",
-                             "First Dis 10 = Eating and Drinking", "First Dis 11 = Shopping", "First Dis 12 = Preparing food/cooking",
-                             "Single/Div","Widowed","Incomplete Ed." ,"Primary Ed."),
+          covariate.labels=c("Age","Catastrophic Disability", "First Dis = ADL", "Suffers from other diseases",
+                             "Had an accident ($<$ 12 months)", "No daily activity",
+                             "Div/Single", "Widowed", "Incomplete Educ.", "Primary Educ"),
           single.row=FALSE, apply.coef = exp)
 
 
