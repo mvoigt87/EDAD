@@ -129,7 +129,7 @@ load(file='010_mayor50.link.RData')
 # 
 
 # 2.5 Separate analysis by sex
-link.may_M <- link.may50 %>% filter(SEXO=="Varón") %>% mutate(Sex="Male")
+link.may_M <- link.may50 %>% filter(SEXO=="Varón") %>% mutate(SEXO="Male")
 link.may_F <- link.may50 %>% filter(SEXO=="Mujer") %>% mutate(SEXO="Female")
 
 # 2.6  Education
@@ -167,21 +167,21 @@ link.may_F <- link.may_F %>% mutate(civil = as.factor(ifelse(Ecivil4=="Casado", 
 link.may_M <- within(link.may_M, civil <- relevel(civil, ref = "Married")) 
 link.may_F <- within(link.may_F, civil <- relevel(civil, ref = "Married")) 
 
-# 2.8 Cohabitation with the partner
-# ---------------------------------
-table(link.may_M$PAREJA)
-table(link.may_F$PAREJA)
-
-link.may_M <- link.may_M %>% mutate(PAREJA=ifelse(PAREJA=="NC",NA,PAREJA)) %>% filter(!is.na(PAREJA))
-link.may_F <- link.may_F %>% mutate(PAREJA=ifelse(PAREJA=="NC",NA,PAREJA)) %>% filter(!is.na(PAREJA))
-
-# Create English equivalent with less categories
-link.may_M <- link.may_M %>% mutate(CP = as.factor(ifelse(PAREJA==1, "Lives with Partner", "Doesn´t live with partner")))
-link.may_F <- link.may_F %>% mutate(CP = as.factor(ifelse(PAREJA==1, "Lives with Partner", "Doesn´t live with partner")))
-
-# change the reference category
-link.may_M <- within(link.may_M, CP <- relevel(CP, ref = "Lives with Partner")) 
-link.may_F <- within(link.may_F, CP <- relevel(CP, ref = "Lives with Partner")) 
+# # 2.8 Cohabitation with the partner
+# # ---------------------------------
+# table(link.may_M$PAREJA)
+# table(link.may_F$PAREJA)
+# 
+# link.may_M <- link.may_M %>% mutate(PAREJA=ifelse(PAREJA=="NC",NA,PAREJA)) %>% filter(!is.na(PAREJA))
+# link.may_F <- link.may_F %>% mutate(PAREJA=ifelse(PAREJA=="NC",NA,PAREJA)) %>% filter(!is.na(PAREJA))
+# 
+# # Create English equivalent with less categories
+# link.may_M <- link.may_M %>% mutate(CP = as.factor(ifelse(PAREJA==1, "Lives with Partner", "Doesn´t live with partner")))
+# link.may_F <- link.may_F %>% mutate(CP = as.factor(ifelse(PAREJA==1, "Lives with Partner", "Doesn´t live with partner")))
+# 
+# # change the reference category
+# link.may_M <- within(link.may_M, CP <- relevel(CP, ref = "Lives with Partner")) 
+# link.may_F <- within(link.may_F, CP <- relevel(CP, ref = "Lives with Partner")) 
 
 # 2.9 Accident variable
 # ----------------------
@@ -223,10 +223,21 @@ library(Amelia)
 training.data_M <- link.may_M %>% select(EDAD, CoMorb, CatPro, EntryGrave13, ADL, civil, education, Accident12, DailyAct)
 
 missmap(training.data_M, main = "Missing values vs observed")
+#+ ADL  + CoMorb + EntryGrave13 + Accident12 + DailyAct + civil + education
 
 
 
-+ ADL  + CoMorb + EntryGrave13 + Accident12 + DailyAct + civil + education
+
+
+# Output table for paper - summary stats on the age variables   !!! (Make all of them numeric arguments)
+
+stargazer(link.may_M[,c(9, 443,463, 513, 541, 569, 590)])
+stargazer(link.may_F[,c(9, 443,463, 513, 541, 569, 590)])
+
+
+
+
+
 ### 3. Logistic Regression (dependientes)
 ### -------------------------------------
 

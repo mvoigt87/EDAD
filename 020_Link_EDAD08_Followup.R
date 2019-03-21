@@ -210,6 +210,36 @@ mutate(DISCA13_AGE = pmin(DIS_1_A, DIS_2_A, DIS_3_A, DIS_4_A, DIS_5_A, DIS_6_A,
                             DIS_7_A, DIS_8_A, DIS_9_A, DIS_10_A, DIS_11_A, DIS_12_A,
                             DIS_13_A))
 
+## Make a variable to count the disabilities that occur at the onset age of disability
+
+
+
+linkTEST <- link.may50 %>% dplyr::select(IdHogar, SEXO, EDAD, DIS_1_A, DIS_2_A, DIS_3_A, DIS_4_A, DIS_5_A, DIS_6_A,
+                                         DIS_7_A, DIS_8_A, DIS_9_A, DIS_10_A, DIS_11_A, DIS_12_A,DISCA13_AGE,
+                                         DIS_13_A) 
+
+# %>% mutate(DIS_1_A = ifelse(DIS_1_A==999, NA, DIS_1_A)) %>% 
+#   mutate(DIS_2_A = ifelse(DIS_2_A==999, NA, DIS_2_A)) %>%  
+#   mutate(DIS_3_A = ifelse(DIS_3_A==999, NA, DIS_3_A)) %>%  
+#   mutate(DIS_4_A = ifelse(DIS_4_A==999, NA, DIS_4_A)) %>%
+#   mutate(DIS_5_A = ifelse(DIS_5_A==999, NA, DIS_5_A)) %>%
+#   mutate(DIS_6_A = ifelse(DIS_6_A==999, NA, DIS_6_A)) %>%
+#   mutate(DIS_7_A = ifelse(DIS_7_A==999, NA, DIS_7_A)) %>%
+#   mutate(DIS_8_A = ifelse(DIS_8_A==999, NA, DIS_8_A)) %>%
+#   mutate(DIS_9_A = ifelse(DIS_9_A==999, NA, DIS_9_A)) %>%
+#   mutate(DIS_10_A = ifelse(DIS_10_A==999, NA, DIS_10_A)) %>%
+#   mutate(DIS_11_A = ifelse(DIS_11_A==999, NA, DIS_11_A)) %>%
+#   mutate(DIS_12_A = ifelse(DIS_12_A==999, NA, DIS_12_A)) %>%
+#   mutate(DIS_13_A = ifelse(DIS_13_A==999, NA, DIS_13_A)) %>% 
+#   # aaand disca 13
+#   mutate(DISCA13_AGE = ifelse(DISCA13_AGE==999, NA, DISCA13_AGE))
+# 
+# linkTEST <- linkTEST %>% dplyr::filter(!is.na(DISCA13_AGE))
+# 
+# linkTESTX <- linkTEST[,c(4:15,17)]
+# 
+# linkTESTX$dif <- apply(linkTESTX, 1, FUN = function(x) min( x[x!=min(x)] ))
+
 # link.may50 <- link.may50 %>% filter(DISCA13_AGE>=50) %>% filter(DISCA13_AGE<999)
 # link.may50 <- link.may50 %>% filter(Edadinicio_disca44>=50)
 
@@ -312,7 +342,10 @@ link.may50 <- link.may50 %>%
   # preparing food
   mutate(DIS_12_S = ifelse(VDOM_37_2=="Con dificultad moderada", "mild", "severe")) %>% 
   # household tasks
-  mutate(DIS_13_S = ifelse(AUT_28_2=="Con dificultad moderada", "mild", "severe"))
+  mutate(DIS_13_S = ifelse(VDOM_38_2=="Con dificultad moderada", "mild", "severe"))
+
+
+
 # recode entry age into first severe limitation (DISCA 13)
 link.may50 <- link.may50 %>% 
   mutate(DIS_1_SA = ifelse(DIS_1_S=="severe", MOV_18_5, 999)) %>% mutate(DIS_1_SA = ifelse(is.na(DIS_1_SA),999, DIS_1_SA)) %>% 
@@ -333,10 +366,46 @@ link.may50 <- link.may50 %>%
   mutate(EntryGrave13 =pmin(DIS_1_SA, DIS_2_SA, DIS_3_SA, DIS_4_SA, DIS_5_SA, DIS_6_SA,
                             DIS_7_SA, DIS_8_SA, DIS_9_SA, DIS_10_SA, DIS_11_SA, DIS_12_SA,
                             DIS_13_SA))
+##### %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% ######
+##### Alternative Disability Assessment
+table(link.may50$MOV_18_2, useNA = "always")
+# recode all severity variables (DISCA 13) in two groups
+link.may50 <- link.may50 %>%
+  # change posture/move
+  mutate(Sev1 = ifelse(is.na(MOV_18_2), 0, ifelse(MOV_18_2=="Con dificultad moderada", 1 , ifelse(MOV_18_2=="Con dificultad severa", 2,3)))) %>% 
+  # walking and moving inside
+  mutate(Sev2 = ifelse(is.na(MOV_20_2), 0, ifelse(MOV_20_2=="Con dificultad moderada", 1 , ifelse(MOV_20_2=="Con dificultad severa", 2,3)))) %>% 
+  # walking and moving outside
+  mutate(Sev3 = ifelse(is.na(MOV_21_2), 0, ifelse(MOV_21_2=="Con dificultad moderada", 1 , ifelse(MOV_21_2=="Con dificultad severa", 2,3)))) %>% 
+  # Sitting down & using public transport
+  mutate(Sev4 = ifelse(is.na(MOV_22_1), 0, ifelse(MOV_22_2=="Con dificultad moderada", 1 , ifelse(MOV_22_2=="Con dificultad severa", 2,3)))) %>% 
+  # washing and drying
+  mutate(Sev5 = ifelse(is.na(AUT_27_1), 0, ifelse(AUT_27_2=="Con dificultad moderada", 1 , ifelse(AUT_27_2=="Con dificultad severa", 2,3)))) %>% 
+  # basic hygene
+  mutate(Sev6 = ifelse(is.na(AUT_28_1), 0, ifelse(AUT_28_2=="Con dificultad moderada", 1 , ifelse(AUT_28_2=="Con dificultad severa", 2,3)))) %>% 
+  # urinating
+  mutate(Sev7 = ifelse(is.na(AUT_29_1), 0, ifelse(AUT_29_2=="Con dificultad moderada", 1 , ifelse(AUT_29_2=="Con dificultad severa", 2,3)))) %>% 
+  # bathroom
+  mutate(Sev8 = ifelse(is.na(AUT_30_1), 0, ifelse(AUT_30_2=="Con dificultad moderada", 1 , ifelse(AUT_30_2=="Con dificultad severa", 2,3)))) %>% 
+  # dressing and undressing
+  mutate(Sev9 = ifelse(is.na(AUT_32_1), 0, ifelse(AUT_32_2=="Con dificultad moderada", 1 , ifelse(AUT_32_2=="Con dificultad severa", 2,3)))) %>% 
+  # eating and drinking
+  mutate(Sev10 = ifelse(is.na(AUT_33_1), 0, ifelse(AUT_33_2=="Con dificultad moderada", 1 , ifelse(AUT_33_2=="Con dificultad severa", 2,3)))) %>% 
+  # organising shopping for groceries
+  mutate(Sev11 = ifelse(is.na(VDOM_36_1), 0, ifelse(VDOM_36_2=="Con dificultad moderada", 1 , ifelse(VDOM_36_2=="Con dificultad severa", 2,3)))) %>% 
+  # preparing food
+  mutate(Sev12 = ifelse(is.na(VDOM_37_1), 0, ifelse(VDOM_37_2=="Con dificultad moderada", 1 , ifelse(VDOM_37_2=="Con dificultad severa", 2,3)))) %>%  
+  # household tasks
+  mutate(Sev13 = ifelse(is.na(VDOM_38_1), 0, ifelse(VDOM_38_2=="Con dificultad moderada", 1 , ifelse(VDOM_38_2=="Con dificultad severa", 2,3)))) %>% 
 
+  # sum them up to create a point system
+  mutate(SEV_COUNT = Sev1+Sev2+Sev3+Sev4+Sev5+Sev6+Sev7+Sev8+Sev9+Sev10+Sev11+Sev12+Sev13)
 
-summary(link.may50$EntryGrave13)
-hist(link.may50$EntryGrave13[link.may50$EntryGrave13<999])
+summary(link.may50$SEV_COUNT[link.may50$SEV_COUNT>0])
+hist(link.may50$SEV_COUNT[link.may50$SEV_COUNT>0]) # Median is 13
+
+link.may50 <- link.may50 %>% mutate(SEVEREDIS = ifelse(SEV_COUNT<4, "mild", ifelse(SEV_COUNT<9,"moderate", "severe")))
+
 
 # For later purposes the 999 have to be set to NAs
 link.may50 <- link.may50 %>% mutate(EntryGrave13=ifelse(EntryGrave13==999, NA, EntryGrave13))
@@ -379,7 +448,7 @@ link.may50 <- link.may50 %>% mutate(CoMo_1 = ifelse(!is.na(K_3_19) & K_3_19=="S�
   mutate(CoMo_18 = ifelse(!is.na(K_3_17) & K_3_17=="Sí", 1, 0)) %>% 
   mutate(CoMo_19 = ifelse(!is.na(K_3_18) & K_3_18=="Sí", 1, 0)) %>% 
   # 2. Count ADLs
-  mutate(CoMo_count = rowSums(.[571:589])) %>% 
+  mutate(CoMo_count = rowSums(.[586:604])) %>% 
   
   # 3. Define co-morbidity as 2+ extra diseases (factor variable)
   mutate(CoMorb = as.factor(ifelse(CoMo_count>=2,"multi morbid", "no multi morbidity")))
@@ -438,7 +507,7 @@ link.may50 %>% dplyr::count(DISCA13_AGE>=50)
 link.may50 %>% dplyr::count(DISCA13_AGE<999)
 link.may50 %>% dplyr::count(DISCA13_AGE>=50 & DISCA13_AGE<999)
 
-link.may50 <- link.may50 %>% dplyr::filter(DISCA13_AGE>=50) %>% dplyr::filter(DISCA13_AGE<999)
+link.may50 <- link.may50 %>% dplyr::filter(DISCA13_AGE>=50) %>% dplyr::filter(DISCA13_AGE<110)
 
 ######### Extract just the cases needed! ############
 

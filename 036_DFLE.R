@@ -100,9 +100,11 @@ MLT.DIS <- MLT %>% left_join(disrate_M, by="Age") %>% mutate(Lx_i = Lx*(1-age_di
 # Calculate age-specific dependency rates #
 # --------------------------------------- #
 
-table(link.may_M$Dependientes44)
-table(link.may_M$DependientesReales44)    # Use dependientesReales44
-class(link.may_M$EDAD)
+table(link.may_M$Dependientes44, useNA = "always")
+table(link.may_M$DependientesReales44, useNA = "always")
+class(link.may_M$EDAD, useNA = "always")
+table(link.may_M$L_1, useNA = "always")
+table(link.may_M$Dependientes13, useNA = "always") #### This will be what we use for now - it is according to our definition of disability
 
 # Little helper to have a count
 
@@ -165,8 +167,8 @@ Female_DFLE <- FLT_DEP %>% select(Age,Year, age_deprate,ex_dep) %>% left_join(FL
 
 
 #### Table
-DEFLE_TABLE <- cbind(Male_DFLE[c(1,16,31,41),c(1,4,13,17)], Female_DFLE[c(1,16,31,41),c(4,13,17)])
-names(DEFLE_TABLE) <- c("Age","DepFLE","LE","DFLE","DepFLE", "LE", "DFLE")
+DEFLE_TABLE <- cbind(Female_DFLE[c(1,16,26,31,41),c(1,13,17,4)], Male_DFLE[c(1,16,26,31,41),c(13,17,4)])
+names(DEFLE_TABLE) <- c("Age","LE","DFLE","DepFLE", "LE", "DFLE","DepFLE")
 
 
 stargazer(round(DEFLE_TABLE,3), summary=FALSE, rownames=FALSE)
