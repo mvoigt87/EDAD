@@ -402,10 +402,25 @@ link.may50 <- link.may50 %>%
   mutate(SEV_COUNT = Sev1+Sev2+Sev3+Sev4+Sev5+Sev6+Sev7+Sev8+Sev9+Sev10+Sev11+Sev12+Sev13)
 
 summary(link.may50$SEV_COUNT[link.may50$SEV_COUNT>0])
-hist(link.may50$SEV_COUNT[link.may50$SEV_COUNT>0]) # Median is 13
+hist(link.may50$SEV_COUNT[link.may50$SEV_COUNT>0]) # Median is 9, 4 is the first quartile
 
 link.may50 <- link.may50 %>% mutate(SEVEREDIS = ifelse(SEV_COUNT<4, "mild", ifelse(SEV_COUNT<9,"moderate", "severe")))
 
+
+##############################################################################################################################
+#### PLOT for the paper (remember to select the individuals with disability)
+
+SEV_Plot <- link.may50 %>% dplyr::filter(SEV_COUNT>0) %>% mutate(event = as.factor(event)) %>% 
+  ggplot(aes(x=SEV_COUNT, fill=event)) +
+  geom_histogram(binwidth=0.5) +                                                     # position="identity"
+  scale_x_continuous(name = "Severity Score 2008", breaks = c(1,10,20,30,39)) +
+  scale_y_continuous(name = "Frequency") +                                  # ,labels = scales::percent
+  scale_fill_manual(name = "", values=c("#000000", "#A9A9A9"), labels = c("Survivors", "Deceased")) +
+  theme_bw()
+SEV_Plot <- SEV_Plot + theme(legend.position = c(0.85, 0.80)) + 
+  theme(axis.text=element_text(size=12), axis.title=element_text(size=12,face="bold"))
+
+##############################################################################################################################
 
 # For later purposes the 999 have to be set to NAs
 link.may50 <- link.may50 %>% mutate(EntryGrave13=ifelse(EntryGrave13==999, NA, EntryGrave13))
