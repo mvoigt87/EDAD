@@ -153,7 +153,7 @@ summary(Cox_M_1)
 
 Cox_M_2 <- coxph(Surv(time=EDAD,
                       time2 = age.ex,
-                      event=event) ~ DISCA13_AGEGR + SEVEREDIS,
+                      event=event) ~ DISCA13_AGEGR + SEVEREDIS  + CoMorb,
                  data=link.may_M)
 
 summary(Cox_M_2)
@@ -161,7 +161,7 @@ summary(Cox_M_2)
 
 Cox_M_F <- coxph(Surv(time=EDAD,
                       time2 = age.ex,
-                      event=event) ~ DISCA13_AGEGR + SEVEREDIS  + CoMorb + Accident12 + DailyAct ,
+                      event=event) ~ DISCA13_AGEGR + SEVEREDIS  + CoMorb + Accident12 + DailyAct + income + education + civil,
                    data=link.may_M)
 
 summary(Cox_M_F)
@@ -196,7 +196,7 @@ summary(Cox_F_2)
 
 Cox_F_F <- coxph(Surv(time=EDAD,
                       time2 = age.ex,
-                      event=event) ~ DISCA13_AGEGR + SEVEREDIS + CoMorb + Accident12 + DailyAct + education + civil + CV,
+                      event=event) ~ DISCA13_AGEGR + SEVEREDIS + CoMorb + Accident12 + DailyAct +  income + education + civil,
                  data=link.may_F)
 
 summary(Cox_F_F)

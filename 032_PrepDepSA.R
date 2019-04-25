@@ -24,25 +24,6 @@ setwd("C:/Users/y4956294S/Documents/LONGPOP/Subproject 2 - SE differences in tra
 
 # 0.2 data
 # --------------------------------------------
-# load(file='010_mayor.link.RData')
-
-# prepared datasets (see R file 025_CleanCluster)
-
-# Disca 44 file
-# load(file = 'datasets/030_linkmay_M.RData')
-# load(file = 'datasets/030_linkmay_F.RData')
-
-# A 12 data
-# load(file = '030_linkmay_M_12A.RData')
-# load(file = '030_linkmay_F_12A.RData')
-
-# link.may_M2 <- link.may_M
-# link.may_F2 <- link.may_F
-
-# D 13 Data
-# load(file = 'datasets/030_linkmay_M_50ADL.RData')
-# load(file = 'datasets/030_linkmay_F_50ADL.RData')
-
 # new data
 load(file='010_mayor50.link.RData')
 
@@ -154,8 +135,8 @@ link.may_M <- link.may_M %>% mutate(civil = as.factor(ifelse(Ecivil4=="Casado", 
 link.may_F <- link.may_F %>% mutate(civil = as.factor(ifelse(Ecivil4=="Casado", "Married",
                                                              ifelse(Ecivil4=="viudo", "Widowed", "Others"))))
 # change the reference category
-link.may_M <- within(link.may_M, civil <- relevel(civil, ref = "Married")) 
-link.may_F <- within(link.may_F, civil <- relevel(civil, ref = "Married")) 
+link.may_M <- within(link.may_M, civil <- relevel(civil, ref = "Widowed")) 
+link.may_F <- within(link.may_F, civil <- relevel(civil, ref = "Widowed")) 
 table(link.may_M$civil, useNA = "always")
 table(link.may_F$civil)
 
@@ -197,6 +178,107 @@ link.may_F <- link.may_F %>% mutate(CV = as.factor(ifelse(PAREJA==1, "Lives with
 # change the reference category
 link.may_M <- within(link.may_M, CV <- relevel(CV, ref = "Lives with Partner")) 
 link.may_F <- within(link.may_F, CV <- relevel(CV, ref = "Lives with Partner")) 
+
+
+### Kinship - variable (Does a relative live in the same household?)
+
+### two categorizations based on I_1_1 to I_1_7
+  # one: differentiation between close (children and siblings) and extented kin (everybody else)
+  # two: geographical distance (shared environment) - same household, same city etc
+
+# children (the geographically closest)
+link.may_M <- link.may_M %>% mutate(kin_child = ifelse(I_1_2=="En el mismo domicilio" | I_1_2=="En el mismo edificio", "same household or building",
+                                                       ifelse(I_1_2=="En el mismo barrio o pueblo" | I_1_2=="En la misma ciudad", "same village or city",
+                                                              ifelse(I_1_2=="En la misma provincia"| I_1_2=="En distinta provincia", "in Spain",
+                                                                     ifelse(I_1_2=="En otro país","lives abroad", "does not exists/unknown"))))) %>% 
+# siblings (the geographically closest)
+mutate(kin_sib = ifelse(I_1_3=="En el mismo domicilio" | I_1_3=="En el mismo edificio", "same household or building",
+                       ifelse(I_1_3=="En el mismo barrio o pueblo" | I_1_3=="En la misma ciudad", "same village or city",
+                              ifelse(I_1_3=="En la misma provincia"| I_1_3=="En distinta provincia","in Spain",
+                                     ifelse(I_1_3=="En otro país","lives abroad", "does not exists/unknown"))))) %>% 
+# grand children (the geographically closest)
+mutate(kin_grandc = ifelse(I_1_4=="En el mismo domicilio" | I_1_4=="En el mismo edificio", "same household or building",
+                          ifelse(I_1_4=="En el mismo barrio o pueblo" | I_1_4=="En la misma ciudad", "same village or city",
+                                ifelse(I_1_4=="En la misma provincia"| I_1_4=="En distinta provincia","in Spain",
+                                       ifelse(I_1_4=="En otro país","lives abroad", "does not exists/unknown"))))) %>% 
+# extented kin (the geographically closest)
+mutate(kin_ext = ifelse(I_1_6=="En el mismo domicilio" | I_1_6=="En el mismo edificio", "same household or building",
+                        ifelse(I_1_6=="En el mismo barrio o pueblo" | I_1_6=="En la misma ciudad", "same village or city",
+                              ifelse(I_1_6=="En la misma provincia"| I_1_6=="En distinta provincia","in Spain",
+                                     ifelse(I_1_6=="En otro país","lives abroad", "does not exists/unknown"))))) %>% 
+# friends who are not neighbors (the geographically closest)
+mutate(kin_amigo = ifelse(I_1_7=="En el mismo domicilio" | I_1_7=="En el mismo edificio", "same household or building",
+                         ifelse(I_1_7=="En el mismo barrio o pueblo" | I_1_7=="En la misma ciudad", "same village or city",
+                               ifelse(I_1_7=="En la misma provincia"| I_1_7=="En distinta provincia","in Spain",
+                                      ifelse(I_1_7=="En otro país","lives abroad", "does not exists/unknown")))))
+
+### Now summarise (close and extented kin)
+
+# close kin
+link.may_M <- link.may_M %>% mutate(kin_close = ifelse(kin_child=="same household or building"|kin_sib=="same household or building",
+                                                       "same household or building",
+                                                ifelse(kin_child=="same village or city"|kin_sib=="same village or city", "same village or city",
+                                                ifelse(kin_child=="in Spain"|kin_sib=="in Spain"|kin_child=="lives abroad"|kin_sib=="lives abroad",
+                                                                                                        "different province or abroad" ,"does not exists/unknown"))))
+
+# extented kin
+link.may_M <- link.may_M %>% mutate(kin_extent = ifelse(kin_grandc=="same household or building"|kin_ext=="same household or building"|kin_amigo=="same household or building",
+                                                       "same household or building",
+                                                       ifelse(kin_grandc=="same village or city"|kin_ext=="same village or city"|kin_amigo=="same village or city", "same village or city",
+                                                              ifelse(kin_grandc=="in Spain"|kin_ext=="in Spain"|kin_amigo=="in Spain"|kin_grandc=="lives abroad"|kin_ext=="lives abroad"|kin_amigo=="lives abroad",
+                                                                     "different province or abroad","does not exists/unknown"))))
+
+table(link.may_M$kin_close)
+table(link.may_M$kin_extent)
+
+### Same for females
+# children (the geographically closest)
+link.may_F <- link.may_F %>% mutate(kin_child = ifelse(I_1_2=="En el mismo domicilio" | I_1_2=="En el mismo edificio", "same household or building",
+                                                       ifelse(I_1_2=="En el mismo barrio o pueblo" | I_1_2=="En la misma ciudad", "same village or city",
+                                                              ifelse(I_1_2=="En la misma provincia"| I_1_2=="En distinta provincia", "in Spain",
+                                                                     ifelse(I_1_2=="En otro país","lives abroad", "does not exists/unknown"))))) %>% 
+  # siblings (the geographically closest)
+  mutate(kin_sib = ifelse(I_1_3=="En el mismo domicilio" | I_1_3=="En el mismo edificio", "same household or building",
+                          ifelse(I_1_3=="En el mismo barrio o pueblo" | I_1_3=="En la misma ciudad", "same village or city",
+                                 ifelse(I_1_3=="En la misma provincia"| I_1_3=="En distinta provincia","in Spain",
+                                        ifelse(I_1_3=="En otro país","lives abroad", "does not exists/unknown"))))) %>% 
+  # grand children (the geographically closest)
+  mutate(kin_grandc = ifelse(I_1_4=="En el mismo domicilio" | I_1_4=="En el mismo edificio", "same household or building",
+                             ifelse(I_1_4=="En el mismo barrio o pueblo" | I_1_4=="En la misma ciudad", "same village or city",
+                                    ifelse(I_1_4=="En la misma provincia"| I_1_4=="En distinta provincia","in Spain",
+                                           ifelse(I_1_4=="En otro país","lives abroad", "does not exists/unknown"))))) %>% 
+  # extented kin (the geographically closest)
+  mutate(kin_ext = ifelse(I_1_6=="En el mismo domicilio" | I_1_6=="En el mismo edificio", "same household or building",
+                          ifelse(I_1_6=="En el mismo barrio o pueblo" | I_1_6=="En la misma ciudad", "same village or city",
+                                 ifelse(I_1_6=="En la misma provincia"| I_1_6=="En distinta provincia","in Spain",
+                                        ifelse(I_1_6=="En otro país","lives abroad", "does not exists/unknown"))))) %>% 
+  # friends who are not neighbors (the geographically closest)
+  mutate(kin_amigo = ifelse(I_1_7=="En el mismo domicilio" | I_1_7=="En el mismo edificio", "same household or building",
+                            ifelse(I_1_7=="En el mismo barrio o pueblo" | I_1_7=="En la misma ciudad", "same village or city",
+                                   ifelse(I_1_7=="En la misma provincia"| I_1_7=="En distinta provincia","in Spain",
+                                          ifelse(I_1_7=="En otro país","lives abroad", "does not exists/unknown")))))
+
+### Now summarise (close and extented kin)
+
+
+# close kin
+link.may_F <- link.may_F %>% mutate(kin_close = ifelse(kin_child=="same household or building"|kin_sib=="same household or building",
+                                                       "same household or building",
+                                                       ifelse(kin_child=="same village or city"|kin_sib=="same village or city", "same village or city",
+                                                              ifelse(kin_child=="in Spain"|kin_sib=="in Spain"|kin_child=="lives abroad"|kin_sib=="lives abroad",
+                                                                     "different province or abroad" ,"does not exists/unknown"))))
+
+# extented kin
+link.may_F <- link.may_F %>% mutate(kin_extent = ifelse(kin_grandc=="same household or building"|kin_ext=="same household or building"|kin_amigo=="same household or building",
+                                                        "same household or building",
+                                                        ifelse(kin_grandc=="same village or city"|kin_ext=="same village or city"|kin_amigo=="same village or city", "same village or city",
+                                                               ifelse(kin_grandc=="in Spain"|kin_ext=="in Spain"|kin_amigo=="in Spain"|kin_grandc=="lives abroad"|kin_ext=="lives abroad"|kin_amigo=="lives abroad",
+                                                                      "different province or abroad","does not exists/unknown"))))
+
+table(link.may_F$kin_close)
+table(link.may_F$kin_extent)
+
+
 
 
 ## Age groups
