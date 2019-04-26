@@ -32,6 +32,10 @@ setwd("C:/Users/y4956294S/Documents/LONGPOP/Subproject 2 - SE differences in tra
 load(file='010_mayorDEP_M.link.RData')
 load(file='010_mayorDEP_F.link.RData')
 
+# 1) KMEs
+
+# connect the male and female data sets for shared variables
+link.may50 <- union(link.may_F, link.may_M)
 
 #### ---------------------------- ####
 #### KME for exploratory overview ####
@@ -89,6 +93,97 @@ km.1 <- KM.LIM %>% dplyr::filter(time >= 50) %>%
 km.1 +  theme(legend.position = c(0.85, 0.80)) + theme(axis.text=element_text(size=12), axis.title=element_text(size=12,face="bold")) +
        scale_shape_discrete(guide=FALSE)
 
+### now the same graph by sex (facetting)
+### -------------------------------------
+
+# females
+# -------
+
+mfit.2a <- survfit(coxph(Surv(time=EDAD,
+                              time2=age.ex,
+                              event=event) ~ 1, data=subset(link.may50,SEVEREDIS =="mild" & SEXO=="Female")), 
+                   data=subset(link.may50,SEVEREDIS =="mild" & SEXO=="Female"),type="kaplan-meier")
+
+mfit.2b <- survfit(coxph(Surv(time = EDAD,
+                              time2 = age.ex,
+                              event = event) ~ 1, data=subset(link.may50,SEVEREDIS =="moderate" & SEXO=="Female")), 
+                   data=subset(link.may50,SEVEREDIS =="moderate" & SEXO=="Female"),type="kaplan-meier")
+
+mfit.2c <- survfit(coxph(Surv(time = EDAD,
+                              time2 = age.ex,
+                              event = event) ~ 1, data=subset(link.may50,SEVEREDIS =="severe" & SEXO=="Female")), 
+                   data=subset(link.may50,SEVEREDIS =="severe" & SEXO=="Female"),type="kaplan-meier")
+
+
+KM.LIM.a <- tidy(mfit.2a) %>% dplyr::select(estimate, time) %>% mutate(SEV = "mild") %>% mutate(sex="female")
+help.KM1 <- data.frame(1,50,"mild", "female")
+names(help.KM1) <- c("estimate", "time", "SEV", "sex")
+KM.LIM.a <- union(KM.LIM.a, help.KM1)
+
+KM.LIM.b <- tidy(mfit.2b) %>% dplyr::select(estimate, time) %>% mutate(SEV = "moderate") %>% mutate(sex="female")
+help.KM2 <- data.frame(1,50,"moderate","female")
+names(help.KM2) <- c("estimate", "time", "SEV","sex")
+KM.LIM.b <- union(KM.LIM.b, help.KM2)
+
+KM.LIM.c <- tidy(mfit.2c) %>% dplyr::select(estimate, time) %>% mutate(SEV = "severe") %>% mutate(sex="female")
+help.KM3 <- data.frame(1,50,"severe","female")
+names(help.KM3) <- c("estimate", "time", "SEV", "sex")
+KM.LIM.c <- union(KM.LIM.c, help.KM3)
+
+KM.LIM_F <- union(KM.LIM.a, KM.LIM.b) %>% union(KM.LIM.c)
+
+# males
+# -----
+
+mfit.3a <- survfit(coxph(Surv(time=EDAD,
+                              time2=age.ex,
+                              event=event) ~ 1, data=subset(link.may50,SEVEREDIS =="mild" & SEXO=="Male")), 
+                   data=subset(link.may50,SEVEREDIS =="mild" & SEXO=="Male"),type="kaplan-meier")
+
+mfit.3b <- survfit(coxph(Surv(time = EDAD,
+                              time2 = age.ex,
+                              event = event) ~ 1, data=subset(link.may50,SEVEREDIS =="moderate" & SEXO=="Male")), 
+                   data=subset(link.may50,SEVEREDIS =="moderate" & SEXO=="Male"),type="kaplan-meier")
+
+mfit.3c <- survfit(coxph(Surv(time = EDAD,
+                              time2 = age.ex,
+                              event = event) ~ 1, data=subset(link.may50,SEVEREDIS =="severe" & SEXO=="Male")), 
+                   data=subset(link.may50,SEVEREDIS =="severe" & SEXO=="Male"),type="kaplan-meier")
+
+KM.LIM.a <- tidy(mfit.3a) %>% dplyr::select(estimate, time) %>% mutate(SEV = "mild") %>% mutate(sex="male")
+help.KM1 <- data.frame(1,50,"mild", "male")
+names(help.KM1) <- c("estimate", "time", "SEV", "sex")
+KM.LIM.a <- union(KM.LIM.a, help.KM1)
+
+KM.LIM.b <- tidy(mfit.3b) %>% dplyr::select(estimate, time) %>% mutate(SEV = "moderate") %>% mutate(sex="male")
+help.KM2 <- data.frame(1,50,"moderate","male")
+names(help.KM2) <- c("estimate", "time", "SEV","sex")
+KM.LIM.b <- union(KM.LIM.b, help.KM2)
+
+KM.LIM.c <- tidy(mfit.3c) %>% dplyr::select(estimate, time) %>% mutate(SEV = "severe") %>% mutate(sex="male")
+help.KM3 <- data.frame(1,50,"severe","male")
+names(help.KM3) <- c("estimate", "time", "SEV", "sex")
+KM.LIM.c <- union(KM.LIM.c, help.KM3)
+
+KM.LIM_M <- union(KM.LIM.a, KM.LIM.b) %>% union(KM.LIM.c)
+
+# Put them together
+KM.LIM_MF <- union(KM.LIM_F, KM.LIM_M)
+
+km.2 <- KM.LIM_MF %>% dplyr::filter(time >= 50) %>% 
+  ggplot() +
+  geom_step(mapping=aes(x=time, y=estimate, color=SEV)) +
+  scale_y_continuous(name = "Survival Probability")                  +
+  scale_x_continuous(name = "Age") +
+  # scale_colour_manual(values = c("#0072B2", "#D55E00", "#009E73"), name="")     +
+  #  Optional Grey Scales for the paper
+  scale_colour_manual(values = c("#000000", "grey50", "grey75"), name="")     +
+  facet_grid(.~sex) +
+  theme_bw()
+
+km.2 +  theme(legend.position = c(0.85, 0.80)) + theme(axis.text=element_text(size=12), axis.title=element_text(size=12,face="bold")) +
+  scale_shape_discrete(guide=FALSE)
+
 
 
 ###############################
@@ -98,33 +193,33 @@ km.1 +  theme(legend.position = c(0.85, 0.80)) + theme(axis.text=element_text(si
 ## Males
 ## -----
 
-# exit time as time in years (month/12+year)
-link.may_M <- link.may_M %>% mutate(t.salida = (a_salida+(m_salida/12)) - 2006.99)
-hist(link.may_M$t.salida)
-
-# entry time (month/12+year) - onset of disability
-link.may_M <- link.may_M %>% mutate(t.entrada.dis =  2006.99 - (EDAD-DISCA13_AGE)) # same story with inicio Disca44
-link.may_M <- link.may_M %>% mutate(t.salida.dis = (a_salida+(m_salida/12)))
-
-# entry time (month/12+year) - onset of dependency
-link.may_M <- link.may_M %>% mutate(t.entrada.dep =  2006.99 - (EDAD-Edadinicio_cuidado)) 
+  # # exit time as time in years (month/12+year)
+  # link.may_M <- link.may_M %>% mutate(t.salida = (a_salida+(m_salida/12)) - 2006.99)
+  # hist(link.may_M$t.salida)
+  # 
+  # # entry time (month/12+year) - onset of disability
+  # link.may_M <- link.may_M %>% mutate(t.entrada.dis =  2006.99 - (EDAD-DISCA13_AGE)) # same story with inicio Disca44
+  # link.may_M <- link.may_M %>% mutate(t.salida.dis = (a_salida+(m_salida/12)))
+  # 
+  # # entry time (month/12+year) - onset of dependency
+  # link.may_M <- link.may_M %>% mutate(t.entrada.dep =  2006.99 - (EDAD-Edadinicio_cuidado)) 
 
 
 
 ## Females
 ## -------
 
-# exit time (month/12+year)
-link.may_F <- link.may_F %>% mutate(t.salida = (a_salida+(m_salida/12)) - 2006.99)
-hist(link.may_F$t.salida)
-
-
-# entry time (month/12+year) - onset of disability
-link.may_F <- link.may_F %>% mutate(t.entrada.dis =  2006.99 - (EDAD-DISCA13_AGE)) # same story with inicio Disca44
-link.may_F <- link.may_F %>% mutate(t.salida.dis = (a_salida+(m_salida/12)))
-
-# entry time (month/12+year) - onset of dependency
-link.may_F <- link.may_F %>% mutate(t.entrada.dep =  2006.99 - (EDAD-Edadinicio_cuidado)) 
+  # # exit time (month/12+year)
+  # link.may_F <- link.may_F %>% mutate(t.salida = (a_salida+(m_salida/12)) - 2006.99)
+  # hist(link.may_F$t.salida)
+  # 
+  # 
+  # # entry time (month/12+year) - onset of disability
+  # link.may_F <- link.may_F %>% mutate(t.entrada.dis =  2006.99 - (EDAD-DISCA13_AGE)) # same story with inicio Disca44
+  # link.may_F <- link.may_F %>% mutate(t.salida.dis = (a_salida+(m_salida/12)))
+  # 
+  # # entry time (month/12+year) - onset of dependency
+  # link.may_F <- link.may_F %>% mutate(t.entrada.dep =  2006.99 - (EDAD-Edadinicio_cuidado)) 
 
 
 #### 2. Cox Models
@@ -153,18 +248,36 @@ summary(Cox_M_1)
 
 Cox_M_2 <- coxph(Surv(time=EDAD,
                       time2 = age.ex,
-                      event=event) ~ DISCA13_AGEGR + SEVEREDIS  + CoMorb,
+                      event=event) ~ DISCA13_AGEGR + SEVEREDIS,
                  data=link.may_M)
 
 summary(Cox_M_2)
 
 
+
+Cox_M_3 <- coxph(Surv(time=EDAD,
+                      time2 = age.ex,
+                      event=event) ~ DISCA13_AGEGR + SEVEREDIS + catastrophic,
+                 data=link.may_M)
+
+summary(Cox_M_3)
+
+
 Cox_M_F <- coxph(Surv(time=EDAD,
                       time2 = age.ex,
-                      event=event) ~ DISCA13_AGEGR + SEVEREDIS  + CoMorb + Accident12 + DailyAct + income + education + civil,
+                      event=event) ~ DISCA13_AGEGR + SEVEREDIS + catastrophic + CoMorb + Accident12 + DailyAct + income + education + civil + kin_close,
                    data=link.may_M)
 
 summary(Cox_M_F)
+
+### Best fitting model (method: trial and error)
+
+Cox_M_BF <- coxph(Surv(time=EDAD,
+                      time2 = age.ex,
+                      event=event) ~ DISCA13_AGEGR + SEVEREDIS2 + DailyAct + civil + kin_close,
+                 data=link.may_M)
+
+summary(Cox_M_BF)
 
 # + education + civil + CV
 

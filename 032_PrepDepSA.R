@@ -64,7 +64,7 @@ hist(link.may50$dis_golpe, breaks = 12)
 table(link.may50$d_10_a)
 # First: for those with one "first" disability, exclude those with eating problems (DIS_10)
 
-link.may50 <- link.may50 %>% mutate(catastrophic = ifelse(dis_golpe<=2,0,1)) %>% 
+link.may50 <- link.may50 %>% mutate(catastrophic = ifelse(dis_golpe<=1,0,1)) %>% 
   # make it a factor variable for later use
   mutate(catastrophic= as.factor(ifelse(catastrophic==1, "catastrophic onset", "progressive onset"))) 
 
@@ -127,7 +127,9 @@ table(link.may_M$education, useNA = "always")
 link.may_M <- within(link.may_M, education <- relevel(education, ref = "Secondary Educ or higher")) 
 link.may_F <- within(link.may_F, education <- relevel(education, ref = "Secondary Educ or higher")) 
 
-
+### CIVIL STATUS
+table(link.may_F$Ecivil4, useNA = "always")
+table(link.may_M$Ecivil4, useNA = "always")
 # make them factors
 link.may_M <- link.may_M %>% mutate(civil = as.factor(ifelse(Ecivil4=="Casado", "Married",
                                                              ifelse(Ecivil4=="viudo", "Widowed", "Others"))))
@@ -358,17 +360,28 @@ link.may_F <- within(link.may_F, CoMorb <- relevel(CoMorb, ref = "no multi morbi
 # 2.Y. Disability Count - progressive vs. catastrophic (NEW!)
 # -----------------------------------------------------
 # 
-# link.may_M <- within(link.may_M, catastrophic <- relevel(catastrophic, ref = "progressive onset")) 
-# link.may_F <- within(link.may_F, catastrophic <- relevel(catastrophic, ref = "progressive onset"))
+link.may_M <- within(link.may_M, catastrophic <- relevel(catastrophic, ref = "progressive onset"))
+link.may_F <- within(link.may_F, catastrophic <- relevel(catastrophic, ref = "progressive onset"))
 
-link.may_M <- within(link.may_M, CatPro <- relevel(CatPro, ref = "progressive"))
-link.may_F <- within(link.may_F, CatPro <- relevel(CatPro, ref = "progressive"))
+# link.may_M <- within(link.may_M, CatPro <- relevel(CatPro, ref = "progressive"))
+# link.may_F <- within(link.may_F, CatPro <- relevel(CatPro, ref = "progressive"))
 
 # 2.Z Onset of severity   !!!! New !!!
 # ---------------------
 
 link.may_M <- within(link.may_M, SEVEREDIS <- relevel(as.factor(SEVEREDIS), ref = "mild")) %>% filter(!is.na(SEVEREDIS))
 link.may_F <- within(link.may_F, SEVEREDIS <- relevel(as.factor(SEVEREDIS), ref = "mild")) %>% filter(!is.na(SEVEREDIS))
+
+# 2.Z2 Onset of severity with only two categories !!!! New !!!
+# -----------------------------------------------
+
+link.may_M <- link.may_M %>% mutate(SEVEREDIS2 = ifelse(SEVEREDIS=="mild" | SEVEREDIS=="moderate", "mild disability", "severe disability"))
+link.may_M <- within(link.may_M, SEVEREDIS2 <- relevel(as.factor(SEVEREDIS2), ref = "mild disability")) %>% filter(!is.na(SEVEREDIS2))
+table(link.may_M$SEVEREDIS2)
+
+link.may_F <- link.may_F %>% mutate(SEVEREDIS2 = ifelse(SEVEREDIS=="mild" | SEVEREDIS=="moderate", "mild disability", "severe disability"))
+link.may_F <- within(link.may_F, SEVEREDIS2 <- relevel(as.factor(SEVEREDIS2), ref = "mild disability")) %>% filter(!is.na(SEVEREDIS2))
+table(link.may_F$SEVEREDIS2)
 
 # ----------------- #
 # Duration variable #   !!! Duration variable cannot be used due to the categorical nature of "Edadinicio_cuidado"
