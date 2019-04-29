@@ -295,7 +295,7 @@ Cox_F_1 <- coxph(Surv(time=EDAD,
 
 summary(Cox_F_1)
 
-# Add co-morbidity information
+# Add Severity
 
 Cox_F_2 <- coxph(Surv(time=EDAD,
                       time2 = age.ex,
@@ -304,17 +304,35 @@ Cox_F_2 <- coxph(Surv(time=EDAD,
 
 summary(Cox_F_2)
 
+# Add Onset
+
+Cox_F_3 <- coxph(Surv(time=EDAD,
+                      time2 = age.ex,
+                      event=event) ~ DISCA13_AGEGR + SEVEREDIS + catastrophic,
+                 data=link.may_F)
+
+summary(Cox_F_3)
 
 # And add socio-demographics in a final step
 
 Cox_F_F <- coxph(Surv(time=EDAD,
                       time2 = age.ex,
-                      event=event) ~ DISCA13_AGEGR + SEVEREDIS + CoMorb + Accident12 + DailyAct +  income + education + civil,
+                      event=event) ~ DISCA13_AGEGR + SEVEREDIS + catastrophic + CoMorb + Accident12 + DailyAct + income + education + civil + kin_close,
                  data=link.may_F)
 
 summary(Cox_F_F)
 
 # + education + civil + CV
+
+### Best fitting model (method: trial and error)
+
+Cox_F_BF <- coxph(Surv(time=EDAD,
+                       time2 = age.ex,
+                       event=event) ~ DISCA13_AGEGR + SEVEREDIS2 + DailyAct + civil + CoMorb,
+                  data=link.may_F)
+
+summary(Cox_F_BF)
+AIC(Cox_F_BF)
 
 # Put the output together
 
@@ -352,7 +370,7 @@ stargazer(Cox_F_1,Cox_F_2, Cox_F_F, title="Cox PH Regression Models",no.space=F,
 ## Females
 GOMP_F <- flexsurvreg(Surv(time=EDAD,
                            time2=age.ex,
-                           event=event) ~ DISCA13_AGEGR + SEVEREDIS + CoMorb + Accident12 + DailyAct, data = link.may_F,
+                           event=event) ~ DISCA13_AGEGR + SEVEREDIS2 + DailyAct + civil + CoMorb, data = link.may_F,
                           dist = "gompertz")
 GOMP_F
 # survival curve
@@ -366,7 +384,7 @@ legend("topright",legend=c("KME","Gompertz Curve"),
 
 GOMP_M <- flexsurvreg(Surv(time=EDAD,
                           time2=age.ex,
-                          event=event) ~ DISCA13_AGEGR + SEVEREDIS + CoMorb + Accident12 + DailyAct, data = link.may_M,
+                          event=event) ~ DISCA13_AGEGR + SEVEREDIS2 + DailyAct + civil + kin_close, data = link.may_M,
                      dist = "gompertz")
 GOMP_M
 
