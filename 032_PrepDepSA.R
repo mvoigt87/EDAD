@@ -104,6 +104,13 @@ link.may50 <- link.may50 %>% mutate(DISCA13_AGEGR = ifelse(DISCA13_AGE<61, "50-6
 
 table(link.may50$DISCA13_AGEGR)
 
+# ----------------- #
+# Duration variable #   !!! Duration variable cannot be used due to the categorical nature of "Edadinicio_cuidado"
+# ----------------- #
+link.may50 <- link.may50 %>% mutate(dur_dis = EDAD - DISCA13_AGE) %>% filter(dur_dis>=0)
+summary(link.may50$dur_dis)
+hist(link.may50$dur_dis)
+
 ####
 ####
 
@@ -383,44 +390,39 @@ link.may_F <- link.may_F %>% mutate(SEVEREDIS2 = ifelse(SEVEREDIS=="mild" | SEVE
 link.may_F <- within(link.may_F, SEVEREDIS2 <- relevel(as.factor(SEVEREDIS2), ref = "mild disability")) %>% filter(!is.na(SEVEREDIS2))
 table(link.may_F$SEVEREDIS2)
 
-# ----------------- #
-# Duration variable #   !!! Duration variable cannot be used due to the categorical nature of "Edadinicio_cuidado"
-# ----------------- #
-link.may_F <- link.may_F %>% mutate(dur_dis = Edadinicio_cuidado - DISCA13_AGE)
-link.may_M <- link.may_M %>% mutate(dur_dis = Edadinicio_cuidado - DISCA13_AGE)
+# duration age groups
+# -------------------
 summary(link.may_F$dur_dis)
 summary(link.may_M$dur_dis)
 hist(link.may_M$dur_dis, breaks=50)
+hist(link.may_F$dur_dis)
+link.may_F <- link.may_F %>% mutate(dur_disGR = ifelse(dur_dis<=4,"0-4 years", ifelse(dur_dis<=7, "5-7 years", "7 + years")))
+link.may_M <- link.may_M %>% mutate(dur_disGR = ifelse(dur_dis<=3,"0-3 years", ifelse(dur_dis<=6, "4-6 years", "6 + years")))
 
-# Probably better to be a categorical variable
-# link.may_F <- link.may_F %>% mutate(dur_dis_cat = as.factor(ifelse(dur_dis<(-1), "$> 1$ years before", 
-#                                                          ifelse(dur_dis<1, "same time",
-#                                                                 ifelse(dur_dis<5, "$< 3$ years after", "$> 3$ years after")))))
-# 
-# table(link.may_F$dur_dis_cat)
-# 
-# 
-# # Probably better to be a categorical variable
-# link.may_M <- link.may_M %>% mutate(dur_dis_cat = as.factor(ifelse(dur_dis<(-1), "$> 1$ years before", 
-#                                                          ifelse(dur_dis<1, "same time",
-#                                                                 ifelse(dur_dis<5, "$< 3$ years after", "$> 3$ years after")))))
-# 
-# table(link.may_M$dur_dis_cat)
+# Visualization
+SDD <- link.may_M %>% mutate(event = as.factor(event)) %>% 
+  ggplot(aes(x=dur_disGR, fill=SEVEREDIS)) +
+  geom_bar(aes(y = (..count..)/sum(..count..))) +
+  scale_y_continuous(name = "Relative Frequency", labels = scales::percent) +
+  scale_x_discrete(name = "Duration Disability (Groups)") +
+  scale_fill_manual(name = "", values=c("#0072B2", "#D55E00", "#009E73")) +
+  theme_bw()
+SDD + theme(axis.text=element_text(size=12),
+            axis.title=element_text(size=14,face="bold"), strip.text.y = element_text(size=12, face="bold"))
 
-# relevel the categories
-# ----------------------
+### ------------------- ###
+### Grouping categories ###
+### ------------------- ###
 
-# link.may_F <- within(link.may_F, dur_dis_cat <- relevel(dur_dis_cat, ref = "$> 1$ years before")) 
-# link.may_M <- within(link.may_M, dur_dis_cat <- relevel(dur_dis_cat, ref = "$> 1$ years before"))
+link.may_F <- link.may_F %>% mutate(DIS_GRP = ifelse(SEVEREDIS2=="mild disability", "mild-progressive", 
+                                              ifelse(SEVEREDIS2=="severe disability" & dis_golpe<=2 & dur_dis>=3,"accelerated", "catastrophic")))
 
+table(link.may_F$DIS_GRP)
 
-# relevel the categories
-# ----------------------
+link.may_M <- link.may_M %>% mutate(DIS_GRP = ifelse(SEVEREDIS2=="mild disability", "mild-progressive", 
+                                                     ifelse(SEVEREDIS2=="severe disability" & dis_golpe<=2 & dur_dis>=3,"accelerated", "catastrophic")))
 
-# link.may_F <- within(link.may_F, EntryGrave13_cat <- relevel(as.factor(EntryGrave13_cat), ref = "85+")) 
-# link.may_M <- within(link.may_M, EntryGrave13_cat <- relevel(as.factor(EntryGrave13_cat), ref = "85+"))
-
-
+table(link.may_M$DIS_GRP)
 
 # missing value exploration
 # -------------------------

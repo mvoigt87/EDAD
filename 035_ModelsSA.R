@@ -17,6 +17,7 @@ library(flexsurv)
 library(survminer)
 # for checking for different distributions
 library(fitdistrplus)
+library(parfm)
 
 # 0.3 Set right working directory
 dir()
@@ -281,6 +282,42 @@ summary(Cox_M_BF)
 
 # + education + civil + CV
 
+############# --------------------------------- #######################
+# BY GROUPS - Females
+
+Cox_F_BF_A <- coxph(Surv(time=EDAD,
+                         time2 = age.ex,
+                         event=event) ~ DailyAct + civil + kin_close + income + education + CoMorb + Accident12,
+                    data=subset(link.may_F, SEVEREDIS2=="mild disability"))
+
+summary(Cox_F_BF_A)
+
+Cox_F_BF_B <- coxph(Surv(time=EDAD,
+                         time2 = age.ex,
+                         event=event) ~ DailyAct + civil + kin_close + income + education + CoMorb + Accident12,
+                    data=subset(link.may_F, SEVEREDIS2=="severe disability"))
+
+summary(Cox_F_BF_B)
+
+
+# BY GROUPS - Males
+
+Cox_M_BF_A <- coxph(Surv(time=EDAD,
+                       time2 = age.ex,
+                       event=event) ~ DailyAct + civil + kin_close + income + education + CoMorb + Accident12,
+                  data=subset(link.may_M, SEVEREDIS2=="mild disability"))
+
+summary(Cox_M_BF_A)
+
+Cox_M_BF_B <- coxph(Surv(time=EDAD,
+                         time2 = age.ex,
+                         event=event) ~ DailyAct + civil + kin_close + income + education + CoMorb + Accident12,
+                    data=subset(link.may_M, SEVEREDIS2=="severe disability"))
+
+summary(Cox_M_BF_B)
+
+
+############# --------------------------------- #######################
 
 # 2. step - add severity and comorbidity
 
@@ -393,8 +430,18 @@ plot(GOMP_M, xlim=c(50,100))
 legend("topright",legend=c("KME","Gompertz Curve"), 
        lty=c(1,1),col=c("black","red"), cex=0.75)
 
+# By group:
+GOMP_M_A <- flexsurvreg(Surv(time=EDAD,
+                           time2=age.ex,
+                           event=event) ~ DailyAct + civil + kin_close, data = subset(link.may_M,SEVEREDIS2=="mild disability"),
+                      dist = "gompertz")
+GOMP_M_A
 
-
+GOMP_M_B <- flexsurvreg(Surv(time=EDAD,
+                             time2=age.ex,
+                             event=event) ~ DailyAct + civil + kin_close, data = subset(link.may_M,SEVEREDIS2=="severe disability"),
+                        dist = "gompertz")
+GOMP_M_B
 
 
 # estimated shape and scale
@@ -439,44 +486,34 @@ plot(fit)
 #   return(y)
 # }  
 
+###########################################################################################################################
 
 
-## Males
-## -----
+#### Gompertz - Gamma Frailty Model
 
-GOMP_M <- flexsurvreg(Surv(time=EDAD,
-                           time2=age.ex,
-                           event=event) ~ dur_dis_cat + education + CP + civil + EntryGrave13, data = link.may_M,
-                      dist = "gompertz")
+# First step - every individual needs an individual identifier
 
 
+###
+# males
+###
 
+link.may_M$ID <- seq.int(nrow(link.may_M))
 
+# run model
+GGF_M1 <- parfm(Surv(time=EDAD,
+                     time2=age.ex,
+                     event=event) ~ DISCA13_AGEGR + SEVEREDIS2 + DailyAct + civil + kin_close, cluster = "ID",
+          data = link.may_M, dist = "gompertz", frailty = "gamma", method = "Nelder-Mead")
 
+###
+# females
+###
 
-# Just the transitions
+link.may_F$ID <- seq.int(nrow(link.may_F))
 
-Cox.CFP.a <- coxph(Surv(time=EDAD,
-                        time2=age.ex,
-                        event=event) ~ group.d.d, 
-                   data=subset(link.may))
-
-summary(Cox.CFP.a)
-
-# Plus a few ses variables
-Cox.CFP.b <- coxph(Surv(time=EDAD,
-                        time2=age.ex,
-                        event=event) ~ group.d.d + Sex + Education + Income, 
-                   data=subset(link.may))
-
-summary(Cox.CFP.b)
-
-# table for CFP
-# -------------
-
-stargazer(Cox.CFP.a, Cox.CFP.b, title ="Cox PH Model",no.space=F, 
-          ci=T, ci.level=0.95, omit.stat=c("max.rsq"),dep.var.labels=c("Hazard Ratios"),
-          covariate.labels=c("Acute Transition", "Moderate Transition", "Male", "Low Education",
-                             "Low Income (<625 Eur)"),
-          single.row=T, apply.coef = exp)
-
+# run model
+GGF_F1 <- parfm(Surv(time=EDAD,
+                     time2=age.ex,
+                     event=event) ~ DISCA13_AGEGR + SEVEREDIS2 + DailyAct + civil + kin_close, cluster = "ID",
+                data = link.may_F, dist = "gompertz", frailty = "gamma", method = "Nelder-Mead")
