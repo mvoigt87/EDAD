@@ -30,67 +30,36 @@ load(file='010_mayor50.link.RData')
 
 # select only the dependent individuals! #
 # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% #
-table(link.may50$Dependientes13, useNA = "always")
-table(link.may50$L_1, useNA = "always")
-table(link.may50$DependientesReales44, useNA = "always")
-
-# Select the dependent individuals
-link.may50 <- link.may50 %>% filter(L_1=="Sí") 
-
-### Create variable disability de golpe
-
-link.may50 <- link.may50 %>%
-  mutate(d_1_a = ifelse(Disca13=="Si" & DIS_1_A==DISCA13_AGE, 1, 0)) %>% 
-  mutate(d_2_a = ifelse(Disca13=="Si" & DIS_2_A==DISCA13_AGE, 1, 0)) %>% 
-  mutate(d_3_a = ifelse(Disca13=="Si" & DIS_3_A==DISCA13_AGE, 1, 0)) %>% 
-  mutate(d_4_a = ifelse(Disca13=="Si" & DIS_4_A==DISCA13_AGE, 1, 0)) %>% 
-  mutate(d_5_a = ifelse(Disca13=="Si" & DIS_5_A==DISCA13_AGE, 1, 0)) %>% 
-  mutate(d_6_a = ifelse(Disca13=="Si" & DIS_6_A==DISCA13_AGE, 1, 0)) %>% 
-  mutate(d_7_a = ifelse(Disca13=="Si" & DIS_7_A==DISCA13_AGE, 1, 0)) %>% 
-  mutate(d_8_a = ifelse(Disca13=="Si" & DIS_8_A==DISCA13_AGE, 1, 0)) %>% 
-  mutate(d_9_a = ifelse(Disca13=="Si" & DIS_9_A==DISCA13_AGE, 1, 0)) %>% 
-  mutate(d_10_a = ifelse(Disca13=="Si" & DIS_10_A==DISCA13_AGE, 2, 0)) %>%  # we assume that not being able to eat is an extreme case
-  mutate(d_11_a = ifelse(Disca13=="Si" & DIS_11_A==DISCA13_AGE, 1, 0)) %>% 
-  mutate(d_12_a = ifelse(Disca13=="Si" & DIS_12_A==DISCA13_AGE, 1, 0)) %>% 
-  mutate(d_13_a = ifelse(Disca13=="Si" & DIS_13_A==DISCA13_AGE, 1, 0)) %>% 
-  mutate(dis_golpe = as.numeric(d_1_a + d_2_a + d_3_a + d_4_a + d_5_a + d_6_a +
-                                  d_7_a + d_8_a + d_9_a + d_10_a + d_11_a + d_12_a + d_13_a))
-
-summary(link.may50$dis_golpe)
-hist(link.may50$dis_golpe, breaks = 12)
-
-### New definition of catastrophics = more than one at the time + if the one is eating + if there is a year or less between 1-2-3
-
-table(link.may50$d_10_a)
-# First: for those with one "first" disability, exclude those with eating problems (DIS_10)
-
-link.may50 <- link.may50 %>% mutate(catastrophic = ifelse(dis_golpe<=1,0,1)) %>% 
-  # make it a factor variable for later use
-  mutate(catastrophic= as.factor(ifelse(catastrophic==1, "catastrophic onset", "progressive onset"))) 
-
-table(link.may50$catastrophic)
+# table(link.may50$Dependientes13, useNA = "always")
+# table(link.may50$L_1, useNA = "always")
+# table(link.may50$DependientesReales44, useNA = "always")
+# 
+# # Select the dependent individuals
+# link.may50 <- link.may50 %>% filter(L_1=="Sí") 
 
 
 
-# Second: calculate the difference between every onset age and DISCA13_AGE (A second way to describe pathways)
-# ignore the zeros
-link.may50 <- link.may50 %>% 
-  mutate(diff1 = ifelse(DIS_1_A<999, DIS_1_A - DISCA13_AGE, NA)) %>% mutate(diff2 = ifelse(DIS_2_A<999,DIS_2_A - DISCA13_AGE, NA)) %>%
-  mutate(diff3 = ifelse(DIS_3_A<999, DIS_3_A - DISCA13_AGE, NA)) %>% mutate(diff4 = ifelse(DIS_4_A<999, DIS_4_A - DISCA13_AGE, NA)) %>%
-  mutate(diff5 = ifelse(DIS_5_A<999, DIS_5_A - DISCA13_AGE, NA)) %>% mutate(diff6 = ifelse(DIS_6_A<999, DIS_6_A - DISCA13_AGE, NA)) %>%
-  mutate(diff7 = ifelse(DIS_7_A<999, DIS_7_A - DISCA13_AGE, NA)) %>% mutate(diff8 = ifelse(DIS_8_A<999, DIS_8_A - DISCA13_AGE, NA)) %>%
-  mutate(diff9 = ifelse(DIS_9_A<999, DIS_9_A - DISCA13_AGE, NA)) %>% mutate(diff10 = ifelse(DIS_10_A<999, DIS_10_A - DISCA13_AGE, NA)) %>%
-  mutate(diff11 = ifelse(DIS_11_A<999, DIS_11_A - DISCA13_AGE, NA)) %>% mutate(diff12 = ifelse(DIS_12_A<999, DIS_12_A - DISCA13_AGE, NA)) %>%
-  mutate(diff13 = ifelse(DIS_13_A<999, DIS_13_A - DISCA13_AGE, NA))
-# find the smallest difference to find the onset of disability number 2
+### Dataset for trial and error
 
-# mutate(DIFF_2 = pmin(diff1>0, diff2>0, diff3>0, diff4>0, diff5>0, diff6>0, diff7>0, diff8>0,
-#                      diff9>0, diff10>0, diff11>0, diff12>0, diff13>0))
-
-link.may50$DIFF_2 <- apply(link.may50[,627:639], 1, FUN = function(x) {min(x[x > 0])})
-
-hist(link.may50$DIFF_2)
-table(link.may50$DIFF_2)
+# diffdata <- as.data.frame(link.may50[,c(6,8,625,626:639)])
+# diffdata <- diffdata %>% 
+#   mutate(diff1 = ifelse(is.na(diff1), 999, diff1)) %>% mutate(diff2 = ifelse(is.na(diff2), 999, diff2)) %>% 
+#   mutate(diff3 = ifelse(is.na(diff3), 999, diff3)) %>% mutate(diff4 = ifelse(is.na(diff4), 999, diff4)) %>% 
+#   mutate(diff5 = ifelse(is.na(diff5), 999, diff5)) %>% mutate(diff6 = ifelse(is.na(diff6), 999, diff6)) %>% 
+#   mutate(diff7 = ifelse(is.na(diff7), 999, diff7)) %>% mutate(diff8 = ifelse(is.na(diff8), 999, diff8)) %>% 
+#   mutate(diff9 = ifelse(is.na(diff9), 999, diff9)) %>% mutate(diff10 = ifelse(is.na(diff10), 999, diff10)) %>% 
+#   mutate(diff11 = ifelse(is.na(diff11), 999, diff11)) %>% mutate(diff12 = ifelse(is.na(diff12), 999, diff12)) %>% 
+#   mutate(diff13 = ifelse(is.na(diff13), 999, diff13))
+# diffdata$DIFF_2X <- apply(diffdata[,4:16], 1, FUN = function(x) {min(x[x > 0])})
+# diffdata <- diffdata %>% mutate(DIFF_2X = as.numeric(ifelse(DIFF_2X==999, 0, DIFF_2X)))
+# 
+# # now to get an idea which one may have had an progressive onset
+# hist(diffdata$DIFF_2X)
+# # Now just those with 2 or more disabilities at the same onset age - filters those who had only 1 or 2 disabilities overall
+# hist(diffdata$DIFF_2X[diffdata$dis_golpe==1])
+# summary(diffdata$DIFF_2X)
+# summary(diffdata$DIFF_2X[diffdata$dis_golpe==1])
+# table(diffdata$DIFF_2X, useNA = "always")
 
 # the distribution of disability onset ages supports the idea (0-catastrophicos, 1+ progressivos)
 
@@ -367,8 +336,8 @@ link.may_F <- within(link.may_F, CoMorb <- relevel(CoMorb, ref = "no multi morbi
 # 2.Y. Disability Count - progressive vs. catastrophic (NEW!)
 # -----------------------------------------------------
 # 
-link.may_M <- within(link.may_M, catastrophic <- relevel(catastrophic, ref = "progressive onset"))
-link.may_F <- within(link.may_F, catastrophic <- relevel(catastrophic, ref = "progressive onset"))
+# link.may_M <- within(link.may_M, catastrophic <- relevel(catastrophic, ref = "progressive onset"))
+# link.may_F <- within(link.may_F, catastrophic <- relevel(catastrophic, ref = "progressive onset"))
 
 # link.may_M <- within(link.may_M, CatPro <- relevel(CatPro, ref = "progressive"))
 # link.may_F <- within(link.may_F, CatPro <- relevel(CatPro, ref = "progressive"))
@@ -392,37 +361,70 @@ table(link.may_F$SEVEREDIS2)
 
 # duration age groups
 # -------------------
-summary(link.may_F$dur_dis)
-summary(link.may_M$dur_dis)
-hist(link.may_M$dur_dis, breaks=50)
-hist(link.may_F$dur_dis)
-link.may_F <- link.may_F %>% mutate(dur_disGR = ifelse(dur_dis<=4,"0-4 years", ifelse(dur_dis<=7, "5-7 years", "7 + years")))
-link.may_M <- link.may_M %>% mutate(dur_disGR = ifelse(dur_dis<=3,"0-3 years", ifelse(dur_dis<=6, "4-6 years", "6 + years")))
-
-# Visualization
-SDD <- link.may_M %>% mutate(event = as.factor(event)) %>% 
-  ggplot(aes(x=dur_disGR, fill=SEVEREDIS)) +
-  geom_bar(aes(y = (..count..)/sum(..count..))) +
-  scale_y_continuous(name = "Relative Frequency", labels = scales::percent) +
-  scale_x_discrete(name = "Duration Disability (Groups)") +
-  scale_fill_manual(name = "", values=c("#0072B2", "#D55E00", "#009E73")) +
-  theme_bw()
-SDD + theme(axis.text=element_text(size=12),
-            axis.title=element_text(size=14,face="bold"), strip.text.y = element_text(size=12, face="bold"))
+# summary(link.may_F$dur_dis)
+# summary(link.may_M$dur_dis)
+# hist(link.may_M$dur_dis, breaks=50)
+# hist(link.may_F$dur_dis)
+# link.may_F <- link.may_F %>% mutate(dur_disGR = ifelse(dur_dis<=4,"0-4 years", ifelse(dur_dis<=7, "5-7 years", "7 + years")))
+# link.may_M <- link.may_M %>% mutate(dur_disGR = ifelse(dur_dis<=3,"0-3 years", ifelse(dur_dis<=6, "4-6 years", "6 + years")))
+# 
+# # Visualization
+# SDD <- link.may_M %>% mutate(event = as.factor(event)) %>% 
+#   ggplot(aes(x=dur_disGR, fill=SEVEREDIS)) +
+#   geom_bar(aes(y = (..count..)/sum(..count..))) +
+#   scale_y_continuous(name = "Relative Frequency", labels = scales::percent) +
+#   scale_x_discrete(name = "Duration Disability (Groups)") +
+#   scale_fill_manual(name = "", values=c("#0072B2", "#D55E00", "#009E73")) +
+#   theme_bw()
+# SDD + theme(axis.text=element_text(size=12),
+#             axis.title=element_text(size=14,face="bold"), strip.text.y = element_text(size=12, face="bold"))
 
 ### ------------------- ###
 ### Grouping categories ###
 ### ------------------- ###
 
-link.may_F <- link.may_F %>% mutate(DIS_GRP = ifelse(SEVEREDIS2=="mild disability", "mild-progressive", 
-                                              ifelse(SEVEREDIS2=="severe disability" & dis_golpe<=2 & dur_dis>=3,"accelerated", "catastrophic")))
+# make the necessary checks
 
-table(link.may_F$DIS_GRP)
+# a possible group in between (like accelerated)
+link.may_F %>% filter(dis_golpe<=2 & DIFF_2>1) %>% count(SEVEREDIS2)
+link.may_M %>% filter(dis_golpe<=2 & DIFF_2>1) %>% count(SEVEREDIS2)
 
-link.may_M <- link.may_M %>% mutate(DIS_GRP = ifelse(SEVEREDIS2=="mild disability", "mild-progressive", 
-                                                     ifelse(SEVEREDIS2=="severe disability" & dis_golpe<=2 & dur_dis>=3,"accelerated", "catastrophic")))
+# 1. idea - make 3 groups
+  # catastrophic - high severity, more than 2 disabilities aquired at the same time or less than one years in between
+  # accelerated - high severity, 1 or 2 disabilities acquired at the same time and more than one year in between (muy pocos)
+  # gradual - the rest mild disability
 
-table(link.may_M$DIS_GRP)
+link.may_F <- link.may_F %>% mutate(DIS_GRP = ifelse(dis_golpe<=2 & DIFF_2>1, "accelerated", 
+                                                     ifelse(dis_golpe>2 & SEVEREDIS2=="severe disability","catastrophic","mild-gradual")))
+
+
+link.may_M <- link.may_M %>% mutate(DIS_GRP = ifelse(dis_golpe<=2 & DIFF_2>1, "accelerated", 
+                                                     ifelse(dis_golpe>2 & SEVEREDIS2=="severe disability","catastrophic","mild-gradual")))
+
+###### %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% ######
+# link.may_F <- link.may_F %>% mutate(DIS_GRP = ifelse(SEVEREDIS2=="mild disability", "mild-gradual", 
+#                                               ifelse(SEVEREDIS2=="severe disability" & dis_golpe==1,"accelerated", "catastrophic")))
+# 
+# table(link.may_F$DIS_GRP)
+# 
+# link.may_M <- link.may_M %>% mutate(DIS_GRP = ifelse(SEVEREDIS2=="mild disability", "mild-gradual", 
+#                                                      ifelse(SEVEREDIS2=="severe disability" & dis_golpe==1,"accelerated", "catastrophic")))
+# 
+# table(link.may_M$DIS_GRP)
+###### %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% ######
+# check age groups
+summary(link.may_F$EDAD[link.may_F$DIS_GRP=="accelerated"])
+summary(link.may_F$EDAD[link.may_F$DIS_GRP=="catastrophic"])
+
+# see event distribution - looks like accelerated decline leads to much higher number of deaths
+round(prop.table(table(link.may_F$event[link.may_F$DIS_GRP=="accelerated"])),3)
+round(prop.table(table(link.may_F$event[link.may_F$DIS_GRP=="catastrophic"])),3)
+
+# Differences in distance between first and second limitation
+summary(link.may_F$DIFF_2[link.may_F$DIS_GRP=="mild-gradual"]) # NA - mostly only one disability - doublecheck!
+table(link.may_F$NumDiscas13[link.may_F$DIS_GRP=="mild-gradual"])
+summary(link.may_F$DIFF_2[link.may_F$DIS_GRP=="accelerated"])  # median 3
+
 
 # missing value exploration
 # -------------------------

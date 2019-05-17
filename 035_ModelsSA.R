@@ -46,33 +46,33 @@ link.may50 <- union(link.may_F, link.may_M)
 
 mfit.1a <- survfit(coxph(Surv(time=EDAD,
                               time2=age.ex,
-                              event=event) ~ 1, data=subset(link.may50,SEVEREDIS =="mild")), 
-                   data=subset(link.may50,SEVEREDIS =="mild"),type="kaplan-meier")
+                              event=event) ~ 1, data=subset(link.may50,DIS_GRP =="mild-gradual")), 
+                   data=subset(link.may50,DIS_GRP =="mild-gradual"),type="kaplan-meier")
 
 mfit.1b <- survfit(coxph(Surv(time = EDAD,
                               time2 = age.ex,
-                              event = event) ~ 1, data=subset(link.may50,SEVEREDIS =="moderate")), 
-                   data=subset(link.may50,SEVEREDIS =="moderate"),type="kaplan-meier")
+                              event = event) ~ 1, data=subset(link.may50,DIS_GRP =="accelerated")), 
+                   data=subset(link.may50,DIS_GRP =="accelerated"),type="kaplan-meier")
 
 mfit.1c <- survfit(coxph(Surv(time = EDAD,
                               time2 = age.ex,
-                              event = event) ~ 1, data=subset(link.may50,SEVEREDIS =="severe")), 
-                   data=subset(link.may50,SEVEREDIS =="severe"),type="kaplan-meier")
+                              event = event) ~ 1, data=subset(link.may50,DIS_GRP =="catastrophic")), 
+                   data=subset(link.may50,DIS_GRP =="catastrophic"),type="kaplan-meier")
 
 
 
-KM.LIM.a <- tidy(mfit.1a) %>% dplyr::select(estimate, time) %>% mutate(SEV = "mild")
-help.KM1 <- data.frame(1,50,"mild")
+KM.LIM.a <- tidy(mfit.1a) %>% dplyr::select(estimate, time) %>% mutate(SEV = "mild-gradual")
+help.KM1 <- data.frame(1,50,"mild-gradual")
 names(help.KM1) <- c("estimate", "time", "SEV")
 KM.LIM.a <- union(KM.LIM.a, help.KM1)
 
-KM.LIM.b <- tidy(mfit.1b) %>% dplyr::select(estimate, time) %>% mutate(SEV = "moderate")
-help.KM2 <- data.frame(1,50,"moderate")
+KM.LIM.b <- tidy(mfit.1b) %>% dplyr::select(estimate, time) %>% mutate(SEV = "accelerated")
+help.KM2 <- data.frame(1,50,"accelerated")
 names(help.KM2) <- c("estimate", "time", "SEV")
 KM.LIM.b <- union(KM.LIM.b, help.KM2)
 
-KM.LIM.c <- tidy(mfit.1c) %>% dplyr::select(estimate, time) %>% mutate(SEV = "severe")
-help.KM3 <- data.frame(1,50,"severe")
+KM.LIM.c <- tidy(mfit.1c) %>% dplyr::select(estimate, time) %>% mutate(SEV = "catastrophic")
+help.KM3 <- data.frame(1,50,"catastrophic")
 names(help.KM3) <- c("estimate", "time", "SEV")
 KM.LIM.c <- union(KM.LIM.c, help.KM3)
 
@@ -81,7 +81,7 @@ KM.LIM.c <- union(KM.LIM.c, help.KM3)
 KM.LIM <- union(KM.LIM.a, KM.LIM.b) %>% union(KM.LIM.c)
 
 
-km.1 <- KM.LIM %>% dplyr::filter(time >= 50) %>% 
+km.1 <- KM.LIM %>% dplyr::filter(time >= 65) %>% 
   ggplot() +
   geom_step(mapping=aes(x=time, y=estimate, color=SEV)) +
   scale_y_continuous(name = "Survival Probability")                  +
