@@ -1,9 +1,13 @@
-### -------------------- ###
-### Exploratory Analysis ###
-### -------------------- ###
+---
+title: "Descriptive Overview Disabled Population"
+author: " "
+date: ""
+output: pdf_document
+---
 
-
-# 0.1 packages
+```{r setup, include=FALSE}
+setwd("C:/Users/y4956294S/Documents/LONGPOP/Subproject 2 - SE differences in transition to dependency/R code/EDAD")
+set.seed(17952)
 
 library(tidyverse)
 library(data.table)
@@ -11,24 +15,17 @@ library(foreign)
 library(survival)
 library(broom)
 library(stargazer)
-# Use for a parametric model
-library(flexsurv)
-# for the cool plots
-library(survminer)
-# for checking for different distributions
-library(fitdistrplus)
+library(reshape)
+library("RColorBrewer")
 library(gmodels)
-
-dir()
-setwd("C:/Users/y4956294S/Documents/LONGPOP/Subproject 2 - SE differences in transition to dependency/R code/EDAD")
-
-# 0.2 data
-# --------------------------------------------
 # new data
 load(file='010_mayor50.link.RData')
+```
 
-# Age distributions (at survey year and at death) general #
-# ------------------------------------------------------- #
+# General Population and Age Structure
+Usando la definicion "DISCA13" y un edad de inicio más que 50 nuestra poblacion contiene `r length(link.may50$EDAD)` personas. Eso es la estructura general de los edades en 2008 y la frequencia absoluta y relativa en grupos
+
+```{r ageatEDAD, echo=FALSE}
 summary(link.may50$EDAD)
 hist(link.may50$EDAD, breaks = 60)
 # make age groups
@@ -38,28 +35,22 @@ link.may50 <- link.may50 %>% mutate(AGEGR = ifelse(EDAD<61, "50-60", ifelse(EDAD
 table(link.may50$AGEGR)
 round(prop.table(table(link.may50$AGEGR)),3)
 
+```
 
-# Age at disability onset
-# -----------------------
-hist(link.may50$DISCA13_AGE)
-summary(link.may50$DISCA13_AGE)
+## Survival - Age at exit/censorship
+Otra vez la poblacion total, pero aqui miramos al edad de muerte en total y por sexo. El grafo de bares indica el estado al final de estudio (01.01.2018) depende del grupo de edad en 2008.
 
-link.may50 <- link.may50 %>% mutate(DISCA13_AGEGR = ifelse(DISCA13_AGE<61, "50-60", ifelse(DISCA13_AGE<71, "60-70",
-                                                                                           ifelse(DISCA13_AGE<81, "70-80", "80+"))))
-
-table(link.may50$DISCA13_AGEGR)
-
-## 3. Age at death
-## ---------------
+```{r ageatdeath, echo=FALSE}
+summary(link.may50$age.ex)
 
 # make age groups
 link.may50 <- link.may50 %>% mutate(AGE_X_GR = ifelse(age.ex<61, "50-60", ifelse(age.ex<71, "60-70",
-                                                                                 ifelse(age.ex<81, "70-80", ifelse(age.ex<91, "80-90","90+")))))             
+                                                    ifelse(age.ex<81, "70-80", ifelse(age.ex<91, "80-90","90+")))))             
 
 table(link.may50$AGE_X_GR)
 round(prop.table(table(link.may50$AGE_X_GR)),3)
 
-
+# Age at death by sex
 SD <- link.may50 %>% mutate(event = as.factor(ifelse(event==1, "muerto", "vive"))) %>% 
   ggplot(aes(x=AGEGR, fill=event)) +
   geom_bar(aes(y = (..count..)/sum(..count..))) +
@@ -70,68 +61,117 @@ SD <- link.may50 %>% mutate(event = as.factor(ifelse(event==1, "muerto", "vive")
 
 SD + theme(axis.text=element_text(size=12),
            axis.title=element_text(size=14,face="bold"), strip.text.y = element_text(size=12, face="bold"))
+```
 
-# By Sex
-# ------
+Las proximas 4 tablas son edades de muerte y censura en numeros absolutas y percentajes de mujeres. La tabla contiene edades de muerte (event=1) y las de censura (event=0).
+
+```{r histmuerte, echo=FALSE}
 hist.muerte <- link.may50 %>% mutate(event = as.factor(ifelse(event==1, "muerto", "vive"))) %>% 
   ggplot(aes(age.ex, fill = event))+
   geom_histogram(binwidth = 1)+
   scale_fill_manual(name = "", values=c("#0072B2", "#D55E00")) +
+  scale_x_continuous(name = "Age at exit (death or censor)") +
   theme_bw() +
   facet_grid(.~SEXO)
 hist.muerte + theme(axis.text=element_text(size=12),
-                   axis.title=element_text(size=14,face="bold"), strip.text.y = element_text(size=12, face="bold"))
+           axis.title=element_text(size=14,face="bold"), strip.text.y = element_text(size=12, face="bold"))
+```
 
+\pagebreak
 
-# females
-table(link.may50$AGE_X_GR[link.may50$SEXO=="Mujer" & link.may50$event==1])
-round(prop.table(table(link.may50$AGE_X_GR[link.may50$SEXO=="Mujer" & link.may50$event==1])),3)
-table(link.may50$AGE_X_GR[link.may50$SEXO=="Mujer" & link.may50$event==0])
-round(prop.table(table(link.may50$AGE_X_GR[link.may50$SEXO=="Mujer" & link.may50$event==0])),3)
+```{r ageatdeathmujer, echo=FALSE}
+# numbers - absolute and relative for women
+CrossTable(link.may50$AGE_X_GR[link.may50$SEXO=="Mujer"], link.may50$event[link.may50$SEXO=="Mujer"], prop.t=TRUE, prop.r=TRUE, prop.c=F)
+```
 
-# try gmodels CrossTable command
-CrossTable(link.may50$AGE_X_GR, link.may50$event, prop.t=TRUE, prop.r=TRUE, prop.c=F)
+\pagebreak
 
+Y de varónes. La tabla contiene edades de muerte (event=1) y las de censura (event=0).
 
-#### 4. Disability Groups (by sex and age group) !!!! New classification
+```{r ageatdeathvarón, echo=FALSE}
+# numbers - absolute and relative for men
+CrossTable(link.may50$AGE_X_GR[link.may50$SEXO=="Varón"], link.may50$event[link.may50$SEXO=="Varón"], prop.t=TRUE, prop.r=TRUE, prop.c=F)
+```
+\pagebreak
 
+# Comparing different dissability trajectories
+Como hemos discutido, creamos 3 grupos de trayectorias depende de la historia de discapacidades (inicio y duracion).
+
+| | Mild | Accelerated | Catastrophic |
+| :-------------: | :-------------: |:-------------:|:-------------:|
+| version 1 | 1-2 discas al principio | 1-2 discas al principio + menos 2 año | 3 o más discas al mismo |
+| version 2 | 1-2 discas al principio |  1-2 discas al principio + menos 1 año | 3 o más discas al mismo |
+
+En nuestra "reunion" hemos dicho que los "accelerated" son los con menos que 3 discas al principio pero con menos de 2 años hasta la proxima discapacidad. Aqui nos pone la distribucion de años entre la primera/las primeras discas y la proxima. En general el processo parece muy acelerado con nuestra definicion. Hay solo pocos con más 1-2 discas al principio y 2 años o más entre la primera y las proximas. Entonces, he probabo con una diferencia de un año o más entre inicio y la proxima. Los numeros de segunda manera me parecen mejor distribuido. (Claro, podemos discutir más). Las dos tablas refieren a los grupos de edad en 2008.
+
+```{r discagrp, echo=FALSE}
 # 2 year difference = accelerated
 link.may50 <- link.may50 %>% mutate(DIS_GRP = ifelse(dis_golpe<=2 & DIFF_2>=2, "accelerated", 
                                                      ifelse(dis_golpe>2,"catastrophic","mild-gradual")))
-# check age groups
-summary(link.may50$EDAD[link.may50$DIS_GRP=="accelerated"])
-summary(link.may50$EDAD[link.may50$DIS_GRP=="catastrophic"])
 
 CrossTable(link.may50$AGEGR, link.may50$DIS_GRP, prop.t=TRUE, prop.r=TRUE, prop.c=F)
 
 
-# 1 year difference = accelerated
+# y la segunda
 link.may50 <- link.may50 %>% mutate(DIS_GRP2 = ifelse(dis_golpe<=2 & DIFF_2>=1, "accelerated", 
                                                      ifelse(dis_golpe>2,"catastrophic","mild-gradual")))
 
-# check age groups
-summary(link.may50$EDAD[link.may50$DIS_GRP2=="accelerated"])
-summary(link.may50$EDAD[link.may50$DIS_GRP2=="catastrophic"])
 
 CrossTable(link.may50$AGEGR, link.may50$DIS_GRP2, prop.t=TRUE, prop.r=TRUE, prop.c=F)
 
-### Check mean/medium duration in disability until 2008/2018/death by group
+```
 
-# 1. Average time spent in disability by group and event #
-# ------------------------------------------------------ #
+## How are the groups different by central variables
+La primera tabla son solo las mujeres (disca grupo 2). La segunda los varónes. Hasta ahora parece mejor porque tenemos suficientes casos en todos los grupos - cuando incorporamos mortalidad probalmente va a cambiar.
 
+\pagebreak
+```{r diffdisgrp, echo=FALSE}
+CrossTable(link.may50$AGEGR[link.may50$SEXO=="Mujer"], link.may50$DIS_GRP2[link.may50$SEXO=="Mujer"], prop.t=TRUE, prop.r=TRUE, prop.c=F)
+```
+
+\pagebreak
+
+```{r diffdisgrp2, echo=FALSE}
+# and los hombres
+CrossTable(link.may50$AGEGR[link.may50$SEXO=="Varón"], link.may50$DIS_GRP2[link.may50$SEXO=="Varón"], prop.t=TRUE, prop.r=TRUE, prop.c=F)
+```
+
+Aqui tenemos los duraciones en discapacidad entre el edad de inicio y a) el edad en 2008 o b) el edad al fin de estudio (o antes si muerto).
+
+```{r duration, echo=FALSE}
 # create a duration variable (EDAD)
-link.may50 <- link.may50 %>% mutate(DurDisEDAD = EDAD-DISCA13_AGE) %>% mutate(DurDisEDAD=ifelse(DurDisEDAD<0,0,DurDisEDAD)) %>% 
-  # and the same for the exit (death/censoring)
+link.may50 <- link.may50 %>% mutate(DurDisEDAD = EDAD-DISCA13_AGE) %>% mutate(DurDisEDAD=ifelse(DurDisEDAD<0,0,DurDisEDAD)) %>% # and the same for the exit (death/censoring)
 mutate(DurDisEXIT = age.ex - DISCA13_AGE) %>% filter(DurDisEXIT>=0)
 
-summary(link.may50$DurDisEDAD) # negative numbers are strange
+summary(link.may50$DurDisEDAD)
 summary(link.may50$DurDisEXIT)
+```
 
-# table(link.may50$DurDisEDAD[link.may50$DurDisEDAD<0]) # 150 with exactly -1 year (interviews in 2007?)
-# table(link.may50$DurDisEXIT[link.may50$DurDisEXIT<0]) # 1 case
+\newpage
+Tablas con la duracion media más quartos en discapacidad dependiente de diferentes grupos y sexos
 
+## Duracion inicio-EDAD
+
+| | Mild | Accelerated | Catastrophic |
+| :------------- | :------------- |:-------------|:-------------|
+|Mujeres|||
+| vivos | 4 (Q1: 2, Q3: 9) | 9 (Q1: 4, Q3: 14) | 5 (Q1: 2, Q3: 10) |
+| muertos | 5 (Q1: 2, Q3: 10.25) | 7 (Q1: 4, Q3: 12) | 6 (Q1:2, Q3: 11) |
+| edad medio 2008 |74|81|78|
+| edad medio muerte |85.72|88.59|88.09|
+|-------|
+|Varónes|||
+|-------|
+| vivos | 5 (Q1: 2, Q3: 9) | 6 (Q1: 4, Q3: 14) | 4 (Q1: 2, Q3: 10) |
+| muertos | 4 (Q1: 2, Q3: 9) | 6 (Q1: 4, Q3: 11) | 5 (Q1:2, Q3: 10) |
+| edad medio 2008 |73|80|77|
+| edad medio muerte |83.84|85.26|84.64|.
+
+Visualizado en tres histogrames por grupos de discapacidad.
+
+```{r duration histo, echo=FALSE, fig.height = 5, fig.width = 10}
 # histogram for average duration and event occurrence by disability groups (CHANGE BETWEEN EDAD AND EXIT for different durations)
+
 
 hist_dur <- link.may50 %>% mutate(event = as.factor(ifelse(event==1, "muerto", "vive"))) %>% 
   ggplot(aes(DurDisEDAD, fill = event))+
@@ -141,22 +181,12 @@ hist_dur <- link.may50 %>% mutate(event = as.factor(ifelse(event==1, "muerto", "
   facet_grid(.~ DIS_GRP2)
 hist_dur + theme(axis.text=element_text(size=12),
                     axis.title=element_text(size=14,face="bold"), strip.text.y = element_text(size=12, face="bold"))
+```
 
-# summary stats
-summary(link.may50$DurDisEDAD[link.may50$DIS_GRP2=="mild-gradual"])
-summary(link.may50$DurDisEXIT[link.may50$DIS_GRP2=="mild-gradual"])
+## Survival
+Eso son los graphos de Kaplan-Meier (probalidad de supervivencia) depende de grupos en la poblacion total (1), Mujeres (2) y Varónes (3). En general los de grupo "accelerated" parecen la peor supervivencia. Todos graphos refieren a la mortalidad de los que tienen más que 65 años.
 
-summary(link.may50$DurDisEDAD[link.may50$DIS_GRP2=="accelerated"])
-summary(link.may50$DurDisEXIT[link.may50$DIS_GRP2=="accelerated"])
-
-summary(link.may50$DurDisEDAD[link.may50$DIS_GRP2=="catastrophic"])
-summary(link.may50$DurDisEXIT[link.may50$DIS_GRP2=="catastrophic"])
-
-# 2. SURVIVAL - by the three severity groups #
-# --------------------------------------- #
-
-### Grouping 1
-
+```{r survival total, echo=FALSE, warning=FALSE}
 mfit.1a <- survfit(coxph(Surv(time=EDAD,
                               time2=age.ex,
                               event=event) ~ 1, data=subset(link.may50,DIS_GRP2 =="mild-gradual" & age.ex>64)), 
@@ -192,8 +222,6 @@ KM.LIM.c <- union(KM.LIM.c, help.KM3)
 ### ADD a starting value!!!
 
 KM.LIM <- union(KM.LIM.a, KM.LIM.b) %>% union(KM.LIM.c)
-
-
 km.1 <- KM.LIM %>% dplyr::filter(time >= 65) %>% 
   ggplot() +
   geom_step(mapping=aes(x=time, y=estimate, color=DG)) +
@@ -206,19 +234,9 @@ km.1 <- KM.LIM %>% dplyr::filter(time >= 65) %>%
 
 km.1 +  theme(legend.position = c(0.85, 0.80)) + theme(axis.text=element_text(size=12), axis.title=element_text(size=12,face="bold")) +
   scale_shape_discrete(guide=FALSE)
+```
 
-
-
-
-
-###########################
-### Now the same by sex ###
-###########################
-
-
-
-
-
+```{r survival sexo, echo=FALSE, warning=FALSE}
 mfit.1a <- survfit(coxph(Surv(time=EDAD,
                               time2=age.ex,
                               event=event) ~ 1, data=subset(link.may50,DIS_GRP2 =="mild-gradual" & age.ex>64 & SEXO=="Mujer")), 
@@ -282,11 +300,8 @@ KM.LIM.f <- tidy(mfit.2c) %>% dplyr::select(estimate, time) %>% mutate(DG = "cat
 help.KM3 <- data.frame(1,65,"catastrophic","varón")
 names(help.KM3) <- c("estimate", "time", "DG", "sexo")
 KM.LIM.f <- union(KM.LIM.f, help.KM3)
-
 # combine the data sets and plot them
 KM.LIM <- union(KM.LIM.a, KM.LIM.b) %>% union(KM.LIM.c) %>% union(KM.LIM.d) %>% union(KM.LIM.e) %>% union(KM.LIM.f)
-
-
 km.1 <- KM.LIM %>% dplyr::filter(time >= 65) %>% 
   ggplot() +
   geom_step(mapping=aes(x=time, y=estimate, color=DG)) +
@@ -299,3 +314,6 @@ km.1 <- KM.LIM %>% dplyr::filter(time >= 65) %>%
   theme_bw()
 km.1 +  theme(legend.position = c(0.85, 0.80)) + theme(axis.text=element_text(size=12), axis.title=element_text(size=12,face="bold")) +
   scale_shape_discrete(guide=FALSE)
+```
+
+# Next - Differentes definiciones de discapacidad
